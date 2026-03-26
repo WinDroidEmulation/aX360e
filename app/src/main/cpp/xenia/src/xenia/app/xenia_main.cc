@@ -27,6 +27,7 @@
 #include "xenia/config.h"
 #include "xenia/debug/ui/debug_window.h"
 #include "xenia/emulator.h"
+#include "xenia/kernel/xam/xam_module.h"
 #include "xenia/ui/file_picker.h"
 #include "xenia/ui/window.h"
 #include "xenia/ui/window_listener.h"
@@ -604,6 +605,7 @@ void EmulatorApp::EmulatorThread() {
     path = cvars::target;
   }
 
+  /*
   if (!path.empty()) {
     // Normalize the path and make absolute.
     auto abs_path = std::filesystem::absolute(path);
@@ -626,6 +628,38 @@ void EmulatorApp::EmulatorThread() {
         break;
       }
     }
+  }*/
+
+  if (!path.empty()) {
+    // Normalize the path and make absolute.
+    auto abs_path = std::filesystem::absolute(path);
+
+    result = app_context().CallInUIThread(
+        [this, abs_path]() { return emulator_->LaunchPath(abs_path); });
+    if (XFAILED(result)) {
+      xe::FatalError(fmt::format("Failed to launch target: {:08X}", result));
+      app_context().RequestDeferredQuit();
+      return;
+    }
+  }
+
+  auto xam = emulator_->kernel_state()->GetKernelModule<kernel::xam::XamModule>(
+      "xam.xex");
+
+  if (xam) {
+    xam->LoadLoaderData();
+
+    if (xam->loader_data().launch_data_present) {
+      const std::filesystem::path host_path = xam->loader_data().host_path;
+      app_context().CallInUIThread([this, host_path]() { return emulator_->LaunchPath(host_path);
+      });
+    }
+  }
+
+  // Now, we're going to use this thread to drive events related to emulation.
+  while (!emulator_thread_quit_requested_.load(std::memory_order_relaxed)) {
+    xe::threading::Wait(emulator_thread_event_.get(), false);
+    emulator_->WaitUntilExit();
   }
 }
 

@@ -90,7 +90,7 @@ class WindowedAppContext {
   // itself (in the worst case, in the destructor where virtual methods can't be
   // called), and in this case, this will be returning true.
   bool HasQuitFromUIThread() const {
-    //assert_true(IsInUIThread());
+    assert_true(IsInUIThread());
     return has_quit_;
   }
 

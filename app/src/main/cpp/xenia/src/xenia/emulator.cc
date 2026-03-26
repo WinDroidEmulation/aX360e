@@ -900,7 +900,7 @@ static std::string format_version(xex2_version version) {
     X_STATUS Emulator::CompleteLaunch(const std::string_view module_path) {
   // Making changes to the UI (setting the icon) and executing game config
   // load callbacks which expect to be called from the UI thread.
-  //assert_true(display_window_->app_context().IsInUIThread());
+  assert_true(display_window_->app_context().IsInUIThread());
 
   // Setup NullDevices for raw HDD partition accesses
   // Cache/STFC code baked into games tries reading/writing to these
