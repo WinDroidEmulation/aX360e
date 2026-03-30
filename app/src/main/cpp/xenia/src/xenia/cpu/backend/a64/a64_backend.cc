@@ -654,20 +654,31 @@ HostToGuestThunk A64ThunkEmitter::EmitHostToGuestThunk() {
   SUB(SP, SP, stack_size);
 
   code_offsets.prolog_stack_alloc = offset();
+
+#if XE_PLATFORM_WIN32
   code_offsets.body = offset();
 
   EmitSaveNonvolatileRegs();
+#else
+    EmitSaveNonvolatileRegs();
 
+    code_offsets.body = offset();
+#endif
   MOV(X16, X0);
   MOV(GetContextReg(), X1);  // context
   LDR(GetMembaseReg(), GetContextReg(),offsetof(ppc::PPCContext, virtual_membase));  // membase
   MOV(X0, X2);               // return address
   BLR(X16);
 
+#if XE_PLATFORM_WIN32
   EmitLoadNonvolatileRegs();
 
   code_offsets.epilog = offset();
+#else
+    code_offsets.epilog = offset();
 
+    EmitLoadNonvolatileRegs();
+#endif
   ADD(SP, SP, stack_size);
 
   RET();
@@ -710,18 +721,30 @@ GuestToHostThunk A64ThunkEmitter::EmitGuestToHostThunk() {
   SUB(SP, SP, stack_size);
 
   code_offsets.prolog_stack_alloc = offset();
+#if XE_PLATFORM_WIN32
   code_offsets.body = offset();
 
   EmitSaveVolatileRegs();
+#else
 
+    EmitSaveVolatileRegs();
+    code_offsets.body = offset();
+
+#endif
   MOV(X16, X0);              // function
   MOV(X0, GetContextReg());  // context
   BLR(X16);
 
+#if XE_PLATFORM_WIN32
   EmitLoadVolatileRegs();
 
   code_offsets.epilog = offset();
+#else
 
+    code_offsets.epilog = offset();
+
+    EmitLoadVolatileRegs();
+#endif
   ADD(SP, SP, stack_size);
   RET();
 
@@ -768,10 +791,17 @@ ResolveFunctionThunk A64ThunkEmitter::EmitResolveFunctionThunk() {
   SUB(SP, SP, stack_size);
 
   code_offsets.prolog_stack_alloc = offset();
+
+#if XE_PLATFORM_WIN32
   code_offsets.body = offset();
 
   EmitSaveVolatileRegs();
+#else
 
+    EmitSaveVolatileRegs();
+    code_offsets.body = offset();
+
+#endif
   // mov(rcx, rsi);  // context
   // mov(rdx, rbx);
   // mov(rax, reinterpret_cast<uint64_t>(&ResolveFunction));
@@ -782,10 +812,16 @@ ResolveFunctionThunk A64ThunkEmitter::EmitResolveFunctionThunk() {
   BLR(X16);
   MOV(X16, X0);
 
+#if XE_PLATFORM_WIN32
   EmitLoadVolatileRegs();
 
   code_offsets.epilog = offset();
+#else
 
+    code_offsets.epilog = offset();
+    EmitLoadVolatileRegs();
+
+#endif
   // add(rsp, stack_size);
   // jmp(rax);
   ADD(SP, SP, stack_size);

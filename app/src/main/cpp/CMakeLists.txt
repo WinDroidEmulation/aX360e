@@ -122,17 +122,17 @@ include(build/zstd.cmake)
 
 # TODO -O2/-O3会导致XThread::Reenter抛出c++异常后无法正常展开
 # 找到更好的解决方案后优化这里
-if(CMAKE_BUILD_TYPE STREQUAL Release)
-target_compile_options(xenia-kernel PRIVATE
-        $<$<COMPILE_LANGUAGE:CXX>:-O1>
-)
-target_compile_options(xenia-cpu PRIVATE
-        $<$<COMPILE_LANGUAGE:CXX>:-O1>
-)
-target_compile_options(xenia-cpu-backend-a64 PRIVATE
-        $<$<COMPILE_LANGUAGE:CXX>:-O1>
-)
-endif()
+#if(CMAKE_BUILD_TYPE STREQUAL Release)
+#target_compile_options(xenia-kernel PRIVATE
+#        $<$<COMPILE_LANGUAGE:CXX>:-O1>
+#)
+#target_compile_options(xenia-cpu PRIVATE
+#        $<$<COMPILE_LANGUAGE:CXX>:-O1>
+#)
+#target_compile_options(xenia-cpu-backend-a64 PRIVATE
+#        $<$<COMPILE_LANGUAGE:CXX>:-O1>
+#)
+#endif()
 
 target_include_directories(emu PRIVATE
         xenia
