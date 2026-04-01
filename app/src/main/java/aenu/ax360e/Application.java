@@ -91,6 +91,10 @@ public class Application extends android.app.Application{
         if(!default_config_file.exists())
             Utils.save_string(default_config_file,load_default_config_str(this));
 
+        File global_config_file=get_global_config_file();
+        if(!global_config_file.exists())
+            Utils.copy_file(default_config_file,global_config_file);
+
         if(!get_default_profile_file().exists()){
             File default_profile_dir=get_default_profile_file().getParentFile();
             default_profile_dir.mkdirs();
