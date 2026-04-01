@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="_default">ค่าเริ่มต้น</string>
+    <string name="driver_library_path_dialog_add_hint">เพิ่มไดรเวอร์แบบกำหนดเอง (*.zip)</string>
+    <string name="es_vulkan_vulkan_lib_path">เส้นทางไลบรารีไดรเวอร์แบบกำหนดเอง</string>
+    <string name="es_vulkan_adrenotools_force_max_clocks">ไดรเวอร์แบบกำหนดเองบังคับคล็อกสูงสุด</string>
+
     <string name="create_shortcut">สร้างทางลัด</string>
     <string name="disable_virtual_keyboard">ปิดการใช้งานแป้นพิมพ์เสมือน</string>
     <string name="joystick">จอยสติ๊ก</string>

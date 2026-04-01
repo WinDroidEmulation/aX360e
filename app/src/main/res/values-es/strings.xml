@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="_default">Predeterminado</string>
+    <string name="driver_library_path_dialog_add_hint">Agregar controlador personalizado (*.zip)</string>
+    <string name="es_vulkan_vulkan_lib_path">Ruta de la biblioteca de controladores personalizados</string>
+    <string name="es_vulkan_adrenotools_force_max_clocks">Forzar relojes máximos del controlador personalizado</string>
+
     <string name="create_shortcut">Crear Acceso Directo</string>
     <string name="disable_virtual_keyboard">Desactivar el teclado virtual</string>
     <string name="joystick">Joystick</string>

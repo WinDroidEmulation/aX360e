@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="_default">По умолчанию</string>
+    <string name="driver_library_path_dialog_add_hint">Добавить пользовательский драйвер (*.zip)</string>
+    <string name="es_vulkan_vulkan_lib_path">Путь к библиотеке пользовательского драйвера</string>
+    <string name="es_vulkan_adrenotools_force_max_clocks">Пользовательский драйвер принудительно макс. частоты</string>
+
     <string name="create_shortcut">Создать ярлык</string>
     <string name="disable_virtual_keyboard">Отключить виртуальную клавиатуру</string>
     <string name="joystick">Джойстик</string>

@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="_default">پیش‌فرض</string>
+    <string name="driver_library_path_dialog_add_hint">افزودن درایور سفارشی (*.zip)</string>
+    <string name="es_vulkan_vulkan_lib_path">مسیر کتابخانه درایور سفارشی</string>
+    <string name="es_vulkan_adrenotools_force_max_clocks">وادار کردن ساعت‌های حداکثری درایور سفارشی</string>
+
     <string name="create_shortcut">ایجاد میانبر</string>
     <string name="disable_virtual_keyboard">غیرفعال کردن صفحه کلید مجازی</string>
     <string name="joystick">دسته بازی</string>

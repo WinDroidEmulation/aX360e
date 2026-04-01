@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="_default">Mặc định</string>
+    <string name="driver_library_path_dialog_add_hint">Thêm trình điều khiển tùy chỉnh (*.zip)</string>
+    <string name="es_vulkan_vulkan_lib_path">Đường dẫn thư viện trình điều khiển tùy chỉnh</string>
+    <string name="es_vulkan_adrenotools_force_max_clocks">Trình điều khiển tùy chỉnh buộc xung nhịp tối đa</string>
+
     <string name="create_shortcut">Tạo Phím tắt</string>
     <string name="disable_virtual_keyboard">Tắt bàn phím ảo</string>
     <string name="joystick">Cần điều khiển</string>

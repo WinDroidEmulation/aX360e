@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="_default">Lalai</string>
+    <string name="driver_library_path_dialog_add_hint">Tambah Pemacu Tersuai (*.zip)</string>
+    <string name="es_vulkan_vulkan_lib_path">Laluan Pustaka Pemacu Tersuai</string>
+    <string name="es_vulkan_adrenotools_force_max_clocks">Pemacu Tersuai Paksa Jam Maksimum</string>
+
     <string name="create_shortcut">Buat Pintasan</string>
     <string name="disable_virtual_keyboard">Matikan papan kekunci maya</string>
     <string name="joystick">Kayu Bedik</string>

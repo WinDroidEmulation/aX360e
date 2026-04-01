@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="_default">預設</string>
+    <string name="driver_library_path_dialog_add_hint">新增自訂驅動程式 (*.zip)</string>
+    <string name="es_vulkan_vulkan_lib_path">自訂驅動程式庫路徑</string>
+    <string name="es_vulkan_adrenotools_force_max_clocks">自訂驅動程式強制最大時脈</string>
+
     <string name="create_shortcut">創建捷徑</string>
     <string name="disable_virtual_keyboard">停用虛擬鍵盤</string>
     <string name="joystick">搖桿</string>

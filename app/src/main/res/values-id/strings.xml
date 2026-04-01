@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="_default">Default</string>
+    <string name="driver_library_path_dialog_add_hint">Tambahkan Driver Kustom (*.zip)</string>
+    <string name="es_vulkan_vulkan_lib_path">Jalur Pustaka Driver Kustom</string>
+    <string name="es_vulkan_adrenotools_force_max_clocks">Driver Kustom Paksa Clock Maksimal</string>
+
     <string name="create_shortcut">Buat Pintasan</string>
     <string name="disable_virtual_keyboard">Nonaktifkan keyboard virtual</string>
     <string name="joystick">Joystick</string>

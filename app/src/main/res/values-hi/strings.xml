@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="_default">डिफ़ॉल्ट</string>
+    <string name="driver_library_path_dialog_add_hint">कस्टम ड्राइवर जोड़ें (*.zip)</string>
+    <string name="es_vulkan_vulkan_lib_path">कस्टम ड्राइवर लाइब्रेरी पथ</string>
+    <string name="es_vulkan_adrenotools_force_max_clocks">कस्टम ड्राइवर अधिकतम क्लॉक बल करें</string>
+
     <string name="create_shortcut">शॉर्टकट बनाएं</string>
     <string name="disable_virtual_keyboard">वर्चुअल कीबोर्ड अक्षम करें</string>
     <string name="joystick">जॉयस्टिक</string>

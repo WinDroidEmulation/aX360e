@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="_default">默认</string>
+    <string name="driver_library_path_dialog_add_hint">添加自定义驱动程序 (*.zip)</string>
+    <string name="es_vulkan_vulkan_lib_path">自定义驱动程序库路径</string>
+    <string name="es_vulkan_adrenotools_force_max_clocks">自定义驱动程序强制最大频率</string>
+
     <string name="create_shortcut">创建快捷方式</string>
     <string name="disable_virtual_keyboard">禁用虚拟键盘</string>
     <string name="joystick">摇杆</string>

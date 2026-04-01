@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="_default">Varsayılan</string>
+    <string name="driver_library_path_dialog_add_hint">Özel Sürücü Ekle (*.zip)</string>
+    <string name="es_vulkan_vulkan_lib_path">Özel Sürücü Kitaplığı Yolu</string>
+    <string name="es_vulkan_adrenotools_force_max_clocks">Özel Sürücü Maksimum Saatleri Zorla</string>
+
     <string name="create_shortcut">Kısayol Oluştur</string>
     <string name="disable_virtual_keyboard">Sanal klavyeyi devre dışı bırak</string>
     <string name="joystick">Joystick</string>

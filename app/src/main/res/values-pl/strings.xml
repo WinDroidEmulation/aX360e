@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="_default">Domyślne</string>
+    <string name="driver_library_path_dialog_add_hint">Dodaj niestandardowy sterownik (*.zip)</string>
+    <string name="es_vulkan_vulkan_lib_path">Ścieżka biblioteki niestandardowego sterownika</string>
+    <string name="es_vulkan_adrenotools_force_max_clocks">Niestandardowy sterownik wymusza maksymalne zegary</string>
+
     <string name="create_shortcut">Utwórz skrót</string>
     <string name="disable_virtual_keyboard">Wyłącz klawiaturę wirtualną</string>
     <string name="joystick">Dżojstik</string>

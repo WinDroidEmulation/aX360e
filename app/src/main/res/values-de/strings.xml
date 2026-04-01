@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="_default">Standard</string>
+    <string name="driver_library_path_dialog_add_hint">Benutzerdefinierten Treiber hinzufügen (*.zip)</string>
+    <string name="es_vulkan_vulkan_lib_path">Pfad zur benutzerdefinierten Treiberbibliothek</string>
+    <string name="es_vulkan_adrenotools_force_max_clocks">Benutzerdefinierter Treiber erzwingt maximale Taktraten</string>
+
     <string name="create_shortcut">Verknüpfung erstellen</string>
     <string name="disable_virtual_keyboard">Virtuelle Tastatur deaktivieren</string>
     <string name="joystick">Joystick</string>
