@@ -134,6 +134,8 @@ include(build/zstd.cmake)
 #)
 #endif()
 
+add_subdirectory(libadrenotools EXCLUDE_FROM_ALL)
+
 target_include_directories(emu PRIVATE
         xenia
         xenia/src
@@ -180,6 +182,7 @@ target_link_libraries(emu
         pugixml
         xenia-hid-skylander
         xenia-patcher
+        adrenotools
 )
 
 #xenia-patcher

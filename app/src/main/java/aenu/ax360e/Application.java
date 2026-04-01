@@ -14,6 +14,15 @@ public class Application extends android.app.Application{
     static File get_app_data_dir(){
         return ctx.getExternalFilesDir("ax360e");
     }
+    public static File get_internal_data_dir()
+    {
+        return new File(ctx.getApplicationInfo().dataDir,"ax360e");
+    }
+    //sdcardfs文件系统无法创建可执行文件，只能放在内部存储(ext4)
+    public static File get_custom_driver_dir()
+    {
+        return new File(get_internal_data_dir(),"driver");
+    }
     public static File get_default_config_file(){
         return new File(Application.get_app_data_dir(),"default_config.toml");
     }

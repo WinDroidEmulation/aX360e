@@ -27,8 +27,17 @@ jmethodID mid_open_uri_fd;
 
 std::vector<std::string> g_launch_args;
 std::string g_uri_info_list_file_path;
+std::string g_native_lib_dir;
 static void j_setup_context(JNIEnv* env,jobject self,jobject context ){
     g_context = env->NewGlobalRef(context);
+    //getApplicationInfo().nativeLibraryDir;
+    jmethodID mid_get_application_info = env->GetMethodID(env->GetObjectClass(context), "getApplicationInfo", "()Landroid/content/pm/ApplicationInfo;");
+    jobject app_info = env->CallObjectMethod(context, mid_get_application_info);
+    jfieldID mid_native_library_dir = env->GetFieldID(env->GetObjectClass(app_info), "nativeLibraryDir", "Ljava/lang/String;");
+    jstring native_library_dir = (jstring)env->GetObjectField(app_info, mid_native_library_dir);
+    const char* native_library_dir_c_str=env->GetStringUTFChars(native_library_dir,NULL);
+    g_native_lib_dir=native_library_dir_c_str;
+    env->ReleaseStringUTFChars(native_library_dir,native_library_dir_c_str);
 }
 
 //public native void setup_document_file_tree(DocumentFile tree);

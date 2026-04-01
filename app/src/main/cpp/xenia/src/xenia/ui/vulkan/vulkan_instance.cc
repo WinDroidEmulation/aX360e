@@ -26,12 +26,24 @@
 #include "xenia/base/platform_win.h"
 #endif
 
+
+#if XE_PLATFORM_AX360E||XE_PLATFORM_ANDROID
+#include "../libadrenotools/include/adrenotools/priv.h"
+#include "../libadrenotools/include/adrenotools/driver.h"
+extern std::string g_native_lib_dir;
+#endif
+
 DEFINE_bool(
     vulkan_log_debug_messages, true,
     "Write Vulkan VK_EXT_debug_utils messages to the Xenia log, as opposed to "
     "the OS debug output.",
     "Vulkan");
 
+DEFINE_string(vulkan_lib_path, "", "Custom Driver Library Path", "Vulkan");
+DEFINE_bool(
+        adrenotools_force_max_clocks, false,
+        "Custom Driver Force Max Clocks",
+        "Vulkan");
 namespace xe {
 namespace ui {
 namespace vulkan {
@@ -55,8 +67,26 @@ std::unique_ptr<VulkanInstance> VulkanInstance::Create(
 #else
   const char* const loader_library_name = "libvulkan.so.1";
 #endif
-  // http://developer.download.nvidia.com/mobile/shield/assets/Vulkan/UsingtheVulkanAPI.pdf
-  vulkan_instance->loader_ = dlopen(loader_library_name, RTLD_NOW | RTLD_LOCAL);
+    std::string custom_lib_path=cvars::vulkan_lib_path;
+    if(std::filesystem::exists(custom_lib_path)){
+
+        std::string hook_dir=g_native_lib_dir+'/';
+
+        std::string custom_lib_dir=custom_lib_path.substr(0,custom_lib_path.find_last_of('/')+1);
+        std::string custom_lib_name=custom_lib_path.substr(custom_lib_path.find_last_of('/')+1);
+
+        vulkan_instance->loader_= adrenotools_open_libvulkan(RTLD_NOW,ADRENOTOOLS_DRIVER_CUSTOM,nullptr
+                ,hook_dir.c_str()
+                ,custom_lib_dir.c_str()
+                ,custom_lib_name.c_str()
+                ,nullptr,nullptr);
+
+        adrenotools_set_turbo(cvars::adrenotools_force_max_clocks);
+    }
+    else {
+        // http://developer.download.nvidia.com/mobile/shield/assets/Vulkan/UsingtheVulkanAPI.pdf
+        vulkan_instance->loader_ = dlopen(loader_library_name, RTLD_NOW | RTLD_LOCAL);
+    }
   if (!vulkan_instance->loader_) {
     XELOGE("Failed to load {}", loader_library_name);
     return nullptr;
