@@ -220,5 +220,19 @@ public class Utils {
             return false;
         }
     }
+
+    static String read_file_as_str(File f) {
+        try {
+            FileInputStream in=new FileInputStream(f);
+            int size=in.available();
+            byte[] buffer=new byte[size];
+            in.read(buffer);
+            in.close();
+            return new String(buffer);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 }
 

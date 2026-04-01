@@ -2,6 +2,7 @@
 package aenu.ax360e;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
@@ -23,6 +24,8 @@ import androidx.preference.PreferenceDataStore;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceScreen;
 
+import org.json.JSONObject;
+
 import aenu.preference.CheckBoxPreference;
 import aenu.preference.ListPreference;
 import aenu.preference.SeekBarPreference;
@@ -36,7 +39,9 @@ public class EmulatorSettings extends AppCompatActivity {
     static final String EXTRA_CONFIG_PATH="config_path";
 
     static final int WARNING_COLOR=0xffff8000;
+    static final String Vulkan$vulkan_lib_path="Vulkan|vulkan_lib_path";
 
+    static final int REQUEST_CODE_SELECT_CUSTOM_DRIVER=6101;
     @SuppressLint("ValidFragment")
     public static class SettingsFragment extends PreferenceFragmentCompat implements
             Preference.OnPreferenceClickListener,Preference.OnPreferenceChangeListener{
@@ -327,6 +332,7 @@ public class EmulatorSettings extends AppCompatActivity {
                     "APU|enable_xmp",
                     "APU|use_new_decoder",
                     "APU|use_dedicated_xma_thread",
+                    "Vulkan|adrenotools_force_max_clocks",
             };
             final String[] INT_KEYS={
                     "Memory|mmap_address_high",
@@ -440,6 +446,12 @@ public class EmulatorSettings extends AppCompatActivity {
                 pref.setOnPreferenceClickListener(this);
             }
 
+            findPreference(Vulkan$vulkan_lib_path).setOnPreferenceClickListener(this);
+            if(!Emulator.get.support_custom_driver()){
+                findPreference(Vulkan$vulkan_lib_path).setEnabled(false);
+                findPreference("Vulkan|adrenotools_force_max_clocks").setEnabled(false);
+                //return;
+            }
         }
 
 
@@ -477,7 +489,10 @@ public class EmulatorSettings extends AppCompatActivity {
 
         @Override
         public boolean onPreferenceClick(@NonNull Preference preference) {
-
+            if(preference.getKey().equals(Vulkan$vulkan_lib_path)){
+                show_select_custom_driver_list();
+                return false;
+            }
             if(preference instanceof PreferenceScreen){
                 setPreferenceScreen(root_pref.findPreference(preference.getKey()));
                 return false;
@@ -493,6 +508,71 @@ public class EmulatorSettings extends AppCompatActivity {
             builder.create().show();
         }
 
+        void show_select_custom_driver_list(){
+            File[] files=Application.get_custom_driver_dir().listFiles();
+            if(files==null||files.length==0){
+                create_list_dialog(getString(R.string.es_vulkan_vulkan_lib_path)
+                        , new String[]{getString(R.string._default),getString(R.string.driver_library_path_dialog_add_hint)}, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                                if(which==0)
+                                    config.save_config_entry(Vulkan$vulkan_lib_path,"default");//FIXME:
+                                else
+                                    request_select_custom_driver_file();
+                            }
+                        });
+                return;
+            }
+
+            String  items[]=new String[files.length+2];
+            items[0]=getString(R.string._default);
+            for(int i=0;i<files.length;i++){
+                if(files[i].isFile())
+                    items[i+1]=files[i].getName();
+                else{
+                    File[] sub_files=files[i].listFiles();
+                    if(sub_files.length==1)
+                        items[i+1]=files[i].getName()+"/"+sub_files[0].getName();
+                    else{
+                        File json_f=new File(files[i], "meta.json");
+                        if(json_f.exists()){
+                            try {
+                                JSONObject json = new JSONObject(Utils.read_file_as_str(json_f));
+                                items[i+1]=files[i].getName()+"/"+json.getString("libraryName");
+                            } catch (Exception e) {
+                                items[i+1]="";
+                            }
+                        }
+                        else
+                            items[i+1]="";
+                    }
+                }
+            }
+            items[files.length+1]=getString(R.string.driver_library_path_dialog_add_hint);
+            create_list_dialog(getString(R.string.es_vulkan_vulkan_lib_path), items, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                    if(which==0){
+                        config.save_config_entry(Vulkan$vulkan_lib_path,"default");//FIXME:
+                        setup_costom_driver_library_path(null);
+                    }
+                    else if(which==files.length+1){
+                        request_select_custom_driver_file();
+                    }else{
+                        File f=new File(files[which-1].getParentFile(),items[which]);
+                        setup_costom_driver_library_path(f.getAbsolutePath());
+                    }
+                }
+            });
+        }
+        void request_select_custom_driver_file(){
+            Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("*/*");
+            ((Activity)requireActivity()).startActivityForResult(intent, REQUEST_CODE_SELECT_CUSTOM_DRIVER);
+        }
         void setup_pref_title_color(Preference preference,String cur_val){
             if(preference instanceof CheckBoxPreference){
                 CheckBoxPreference pref=(CheckBoxPreference) preference;
@@ -510,7 +590,17 @@ public class EmulatorSettings extends AppCompatActivity {
                 pref.set_is_modify_color(modify);
             }
         }
+        void setup_costom_driver_library_path(String new_path) {
+            final String key=Vulkan$vulkan_lib_path;
+            if(new_path==null||new_path.isEmpty()){
+                String _default_path=getString(R.string._default);
+                findPreference( key).setSummary(_default_path);
+                return;
+            }
 
+            config.save_config_entry(key,new_path);
+            findPreference(key).setSummary(new_path);
+        }
         @Override
         public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
             if(preference instanceof CheckBoxPreference){
@@ -574,5 +664,22 @@ public class EmulatorSettings extends AppCompatActivity {
         }
 
         getSupportFragmentManager().beginTransaction().replace(R.id.settings_container,fragment).commit();
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (resultCode != RESULT_OK || data == null) return;
+
+        Uri uri=data.getData();
+        String file_name = Utils.getFileNameFromUri(uri);
+
+        switch (requestCode){
+            case REQUEST_CODE_SELECT_CUSTOM_DRIVER:
+                if(file_name.endsWith(".zip"))
+                    Utils.install_custom_driver_from_zip(this,uri,(path)->{ fragment.setup_costom_driver_library_path(path);});
+                break;
+        }
     }
 }

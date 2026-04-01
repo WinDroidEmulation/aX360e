@@ -68,7 +68,7 @@ std::unique_ptr<VulkanInstance> VulkanInstance::Create(
   const char* const loader_library_name = "libvulkan.so.1";
 #endif
     std::string custom_lib_path=cvars::vulkan_lib_path;
-    if(std::filesystem::exists(custom_lib_path)){
+    if(!custom_lib_path.empty()&&std::filesystem::exists(custom_lib_path)){
 
         std::string hook_dir=g_native_lib_dir+'/';
 

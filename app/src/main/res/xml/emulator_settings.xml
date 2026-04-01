@@ -22,6 +22,12 @@
         <aenu.preference.CheckBoxPreference app:title="@string/es_vulkan_vulkan_allow_present_mode_fifo_relaxed"
             app:key="Vulkan|vulkan_allow_present_mode_fifo_relaxed"
             app:summary="@string/es_hint_vulkan_vulkan_allow_present_mode_fifo_relaxed" />
+
+        <PreferenceScreen app:title="@string/es_vulkan_vulkan_lib_path"
+            app:key="Vulkan|vulkan_lib_path"/>
+
+        <aenu.preference.CheckBoxPreference app:title="@string/es_vulkan_adrenotools_force_max_clocks"
+            app:key="Vulkan|adrenotools_force_max_clocks"/>
     </PreferenceScreen>
     <PreferenceScreen app:title="@string/es_video"
         app:key="Video" >

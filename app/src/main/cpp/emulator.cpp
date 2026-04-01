@@ -302,11 +302,22 @@ static void j_save_config_entry(JNIEnv* env,jobject self,std::shared_ptr<cpptoml
     std::string  table_name=tag_str.substr(0,pos);
     std::string  key_name=tag_str.substr(pos+1);
     std::shared_ptr<cpptoml::table> table=(*config_table)->get_table(table_name);
+
+    auto is_float=[](std::string& s){
+        try{
+            std::stof(s);
+            return true;
+        }
+        catch(...){
+            return false;
+        }
+    };
+
     if(val_str=="true"||val_str=="false"){
         LOGE("save_config_entry Z %s %s",tag_str.c_str(),val_str.c_str());
         table->insert(key_name,val_str=="true");
     }
-    else if(val_str.find('.')!=std::string::npos){
+    else if(is_float(val_str)){
         LOGE("save_config_entry F %s %s",tag_str.c_str(),val_str.c_str());
         table->insert(key_name,std::stod(val_str));
     }

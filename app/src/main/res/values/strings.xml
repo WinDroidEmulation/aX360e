@@ -1,6 +1,12 @@
 <resources>
     <string name="app_name">aX360e Free</string>
 
+
+    <string name="_default">Default</string>
+    <string name="driver_library_path_dialog_add_hint">Add Custom Driver(*.zip)</string>
+    <string name="es_vulkan_vulkan_lib_path">Custom Driver Library Path</string>
+    <string name="es_vulkan_adrenotools_force_max_clocks">Custom Driver Force Max Clocks</string>
+
     <string name="create_shortcut">Create Shortcut</string>
     <string name="disable_virtual_keyboard">Disable the virtual keyboard</string>
     <string name="joystick">Joystick</string>
