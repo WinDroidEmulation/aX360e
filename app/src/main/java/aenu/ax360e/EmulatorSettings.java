@@ -73,7 +73,44 @@ public class EmulatorSettings extends AppCompatActivity {
             }
         };
 
-        final PreferenceDataStore data_store=new PreferenceDataStore(){
+        
+
+        // ===== FIX ADDED =====
+        boolean ensure_default_config_exists(){
+            try{
+                File default_config_file=Application.get_default_config_file();
+                if(default_config_file.exists())
+                    return true;
+                String default_config_str=Application.load_default_config_str(requireContext());
+                if(default_config_str==null)
+                    return false;
+                Utils.save_string(default_config_file,default_config_str);
+                return default_config_file.exists();
+            }
+            catch(Exception e){
+                Log.e("EmulatorSettings","ensure_default_config_exists",e);
+                return false;
+            }
+        }
+
+        boolean restore_config_from_default(){
+            try{
+                if(!ensure_default_config_exists())
+                    return false;
+                File config_file=new File(config_path);
+                File parent=config_file.getParentFile();
+                if(parent!=null && !parent.exists())
+                    parent.mkdirs();
+                Utils.copy_file(Application.get_default_config_file(),config_file);
+                return config_file.exists();
+            }
+            catch(Exception e){
+                Log.e("EmulatorSettings","restore_config_from_default",e);
+                return false;
+            }
+        }
+        // =====================
+final PreferenceDataStore data_store=new PreferenceDataStore(){
 
             public void putString(String key, @Nullable String value) {
                 config.save_config_entry(key,value);
@@ -220,18 +257,29 @@ public class EmulatorSettings extends AppCompatActivity {
             requireActivity().getOnBackPressedDispatcher().addCallback(back_callback);
 
             if(!new File(config_path).exists()){
-                root_pref.setEnabled(false);
-                Toast.makeText(requireContext(), config_path, Toast.LENGTH_LONG).show();
-                return;
+                if(!restore_config_from_default()){
+                    root_pref.setEnabled(false);
+                    Toast.makeText(requireContext(), config_path, Toast.LENGTH_LONG).show();
+                    return;
+                }
             }
 
             try{
                 config=Emulator.Config.open_config_file(config_path);
                 original_config=Emulator.Config.open_config_from_string(Application.load_default_config_str(getContext()));
             }catch(Exception e){
-                Log.e("EmulatorSettings",e.toString());
-                root_pref.setEnabled(false);
-                return;
+                Log.e("EmulatorSettings","Failed to open config, trying restore",e);
+                if(!restore_config_from_default()){
+                    root_pref.setEnabled(false);
+                    return;
+                }
+                try{
+                    config=Emulator.Config.open_config_file(config_path);
+                    original_config=Emulator.Config.open_config_from_string(Application.load_default_config_str(getContext()));
+                }catch(Exception e2){
+                    root_pref.setEnabled(false);
+                    return;
+                }
             }
 
 
