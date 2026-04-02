@@ -656,4 +656,41 @@ AppOpenAdManager.getInstance(this).showAdIfAvailable( this);}
             return curView;
         }
     }//!FileAdapter
+
+    // 🔥 Immersive Mode
+    void enableImmersiveMode(){
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            if (getWindow().getInsetsController()!=null){
+                getWindow().getInsetsController().hide(android.view.WindowInsets.Type.systemBars());
+                getWindow().getInsetsController().setSystemBarsBehavior(
+                        android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                );
+            }
+        } else {
+            getWindow().getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                            | View.SYSTEM_UI_FLAG_FULLSCREEN
+                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+            );
+        }
+    }
+
+    // 🔥 Safe Area
+    void applySafeArea(){
+        View root = findViewById(android.R.id.content);
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
+            int bottom = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars()).bottom;
+            int top = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars()).top;
+            v.setPadding(0, top, 0, bottom);
+            return insets;
+        });
+    }
+
+    // 🔥 Focus fix
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) enableImmersiveMode();
+    }
+
 }
