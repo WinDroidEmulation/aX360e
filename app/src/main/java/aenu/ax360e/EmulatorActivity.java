@@ -70,7 +70,7 @@ public class EmulatorActivity extends Activity implements SurfaceHolder.Callback
         Emulator.get.setup_uri_info_list_file(Application.get_uri_info_list_file().getAbsolutePath());
         setContentView(R.layout.activity_emulator);
         enableImmersiveMode();
-        applySafeArea();
+        
         getWindow().getDecorView().post(() -> enableImmersiveMode());
         sf = (SurfaceView) findViewById(R.id.surface_view);
         sf.getHolder().addCallback(EmulatorActivity.this);
@@ -448,17 +448,7 @@ public class EmulatorActivity extends Activity implements SurfaceHolder.Callback
         }
     }
 
-    // 🔥 Safe Area
-    void applySafeArea(){
-        View root = findViewById(android.R.id.content);
-        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
-            int bottom = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars()).bottom;
-            int top = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars()).top;
-            v.setPadding(0, top, 0, bottom);
-            return insets;
-        });
-    }
-
+    
     // 🔥 Focus fix
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
