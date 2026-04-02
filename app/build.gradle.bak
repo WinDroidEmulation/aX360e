@@ -10,8 +10,8 @@ android {
         applicationId "aenu.ax360e"   // Paid App ID
         minSdk 21
         targetSdk 34
-        versionCode 1
-        versionName "1.0"
+        versionCode 15
+        versionName "1.15"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
