@@ -1,59 +1,74 @@
 plugins {
-    id 'com.android.application'
+    alias(libs.plugins.android.application)
 }
 
 android {
     namespace 'aenu.ax360e'
-    compileSdk 34
+    compileSdk 35
 
     defaultConfig {
-        applicationId "aenu.ax360e"   // Paid App ID
-        minSdk 21
-        targetSdk 34
+        applicationId "aenu.ax360e"   
+        minSdk 28
+        targetSdk 35
         versionCode 15
         versionName "1.15"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        externalNativeBuild {
+            cmake {
+                abiFilters 'arm64-v8a'
+                cppFlags ''
+            }
+        }
+        sourceSets{
+            main {
+                //jniLibs.srcDirs = ['src/main/libs']
+            }
+        }
     }
 
     signingConfigs {
-        release {
-            storeFile file("release.jks")
-            storePassword System.getenv("KEYSTORE_PASSWORD")
-            keyAlias System.getenv("KEY_ALIAS")
-            keyPassword System.getenv("KEY_PASSWORD")
-        }
+        // (intentionally empty - YAML handle karega)
     }
 
     buildTypes {
         release {
-            signingConfig signingConfigs.release
             minifyEnabled false
-            shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-        debug {
-            minifyEnabled false
+            signingConfig signingConfigs.release
         }
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 
-    buildFeatures {
-        viewBinding true
+    externalNativeBuild {
+        cmake {
+            path file('src/main/cpp/CMakeLists.txt')
+            version '3.22.1'
+        }
+    }
+
+    packaging {
+        jniLibs.useLegacyPackaging = true
     }
 }
 
 dependencies {
+    implementation("com.google.android.gms:play-services-ads-api:24.6.0")
+    implementation("com.google.android.gms:play-services-ads:24.6.0")
+    implementation("com.google.android.ump:user-messaging-platform:2.1.0")
 
-    implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'com.google.android.material:material:1.11.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation libs.appcompat
+    implementation libs.material
+    implementation libs.activity
+    implementation libs.constraintlayout
+    implementation libs.preference
 
-    testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    testImplementation libs.junit
+    androidTestImplementation libs.ext.junit
+    androidTestImplementation libs.espresso.core
 }
