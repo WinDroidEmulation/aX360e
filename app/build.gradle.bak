@@ -7,7 +7,7 @@ android {
     compileSdk 35
 
     defaultConfig {
-        applicationId "aenu.ax360e"   
+        applicationId "aenu.ax360e"
         minSdk 28
         targetSdk 35
         versionCode 15
@@ -21,7 +21,8 @@ android {
                 cppFlags ''
             }
         }
-        sourceSets{
+
+        sourceSets {
             main {
                 //jniLibs.srcDirs = ['src/main/libs']
             }
@@ -29,7 +30,12 @@ android {
     }
 
     signingConfigs {
-        // (intentionally empty - YAML handle karega)
+        release {
+            storeFile file("release.jks")
+            storePassword System.getenv("KEYSTORE_PASSWORD")
+            keyAlias System.getenv("KEY_ALIAS")
+            keyPassword System.getenv("KEY_PASSWORD")
+        }
     }
 
     buildTypes {
