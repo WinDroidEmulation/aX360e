@@ -23,6 +23,10 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Toast;
+import android.os.Build;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+
 
 import androidx.annotation.NonNull;
 import androidx.documentfile.provider.DocumentFile;
@@ -69,6 +73,11 @@ public class EmulatorActivity extends Activity implements SurfaceHolder.Callback
         });
         Emulator.get.setup_uri_info_list_file(Application.get_uri_info_list_file().getAbsolutePath());
         setContentView(R.layout.activity_emulator);
+        enableImmersiveMode();
+        applySafeArea();
+        // 🔥 Post re-hide (after layout)
+        getWindow().getDecorView().post(() -> enableImmersiveMode());
+
         sf = (SurfaceView) findViewById(R.id.surface_view);
         sf.getHolder().addCallback(EmulatorActivity.this);
 
@@ -101,6 +110,7 @@ public class EmulatorActivity extends Activity implements SurfaceHolder.Callback
     @Override
     protected void onCreate(android.os.Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        enableImmersiveMode();
         if(!Application.should_delay_load()){
             on_create();
             return;
