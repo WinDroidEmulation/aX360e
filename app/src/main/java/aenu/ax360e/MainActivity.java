@@ -183,7 +183,7 @@ _on_create();
         supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
         super.onCreate(savedInstanceState);
         enableImmersiveMode();
-        applySafeArea();
+        
 
         if(!Application.device_support_vulkan()){
             show_device_unsupport_vulkan_dialog();
@@ -675,17 +675,7 @@ AppOpenAdManager.getInstance(this).showAdIfAvailable( this);}
         }
     }
 
-    // 🔥 Safe Area
-    void applySafeArea(){
-        View root = findViewById(android.R.id.content);
-        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
-            int bottom = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars()).bottom;
-            int top = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars()).top;
-            v.setPadding(0, top, 0, bottom);
-            return insets;
-        });
-    }
-
+    
     // 🔥 Focus fix
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
