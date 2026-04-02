@@ -182,6 +182,8 @@ _on_create();
     protected void onCreate(Bundle savedInstanceState) {
         supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
         super.onCreate(savedInstanceState);
+        enableImmersiveMode();
+        applySafeArea();
 
         if(!Application.device_support_vulkan()){
             show_device_unsupport_vulkan_dialog();
