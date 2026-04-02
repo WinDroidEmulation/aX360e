@@ -182,8 +182,6 @@ _on_create();
     protected void onCreate(Bundle savedInstanceState) {
         supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
         super.onCreate(savedInstanceState);
-        enableImmersiveMode();
-        
 
         if(!Application.device_support_vulkan()){
             show_device_unsupport_vulkan_dialog();
@@ -657,30 +655,36 @@ AppOpenAdManager.getInstance(this).showAdIfAvailable( this);}
         }
     }//!FileAdapter
 
-    // 🔥 Immersive Mode
-    void enableImmersiveMode(){
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-            if (getWindow().getInsetsController()!=null){
-                getWindow().getInsetsController().hide(android.view.WindowInsets.Type.systemBars());
-                getWindow().getInsetsController().setSystemBarsBehavior(
-                        android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-                );
+    // 🔥 SAFE IMMERSIVE MODE (NO CRASH)
+    void hideSystemUI(){
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                android.view.WindowInsetsController controller = getWindow().getInsetsController();
+                if (controller != null) {
+                    controller.hide(android.view.WindowInsets.Type.systemBars());
+                    controller.setSystemBarsBehavior(
+                            android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                    );
+                }
+            } else {
+                View decorView = getWindow().getDecorView();
+                if (decorView != null) {
+                    decorView.setSystemUiVisibility(
+                            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                                    | View.SYSTEM_UI_FLAG_FULLSCREEN
+                                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    );
+                }
             }
-        } else {
-            getWindow().getDecorView().setSystemUiVisibility(
-                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                            | View.SYSTEM_UI_FLAG_FULLSCREEN
-                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-            );
-        }
+        } catch (Exception ignored) {}
     }
 
-    
-    // 🔥 Focus fix
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
-        if (hasFocus) enableImmersiveMode();
+        if (hasFocus) {
+            getWindow().getDecorView().post(() -> hideSystemUI());
+        }
     }
 
 }
