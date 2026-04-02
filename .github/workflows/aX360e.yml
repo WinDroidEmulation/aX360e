@@ -12,43 +12,42 @@ jobs:
     environment: release
 
     steps:
+      # Checkout code
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Java setup
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
 
+      # Android SDK
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      # Decode keystore
       - name: Decode Keystore
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_B64 }}" | base64 -d > app/release.jks
 
-      - name: Prepare Gradle file
-        run: |
-          cp app/build.gradle.bak app/build.gradle
-
-          sed -i 's/applicationId "aenu.ax360e.free"/applicationId "aenu.ax360e"/g' app/build.gradle
-
-          perl -0pi -e 's/signingConfigs\s*\{\s*\}/signingConfigs {\n        release {\n            storeFile file("release.jks")\n            storePassword System.getenv("KEYSTORE_PASSWORD")\n            keyAlias System.getenv("KEY_ALIAS")\n            keyPassword System.getenv("KEY_PASSWORD")\n        }\n    }/s' app/build.gradle
-
+      # Read version from build.gradle
       - name: Detect Version Name
         id: meta
         run: |
           VERSION_NAME=$(grep -oP 'versionName\s+"[^"]+"' app/build.gradle | head -n1 | sed 's/versionName\s*"\(.*\)"/\1/')
           if [ -z "$VERSION_NAME" ]; then
-            VERSION_NAME="unknown"
+            VERSION_NAME="1.0"
           fi
           echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
           echo "apk_name=aX360e-${VERSION_NAME}.apk" >> $GITHUB_OUTPUT
 
+      # Gradle permission
       - name: Grant execute permission
         run: chmod +x gradlew
 
+      # Build signed APK
       - name: Build Signed APK
         env:
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -56,22 +55,25 @@ jobs:
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: ./gradlew assembleRelease
 
+      # Rename APK
       - name: Rename APK
         run: |
-          APK_PATH=$(find app/build/outputs/apk/ -name "*.apk" | head -n1)
-          cp "$APK_PATH" "app/build/outputs/apk/${{ steps.meta.outputs.apk_name }}"
+          APK_PATH=$(find app/build/outputs/apk/release -name "*.apk" | head -n1)
+          cp "$APK_PATH" "app/build/outputs/apk/release/${{ steps.meta.outputs.apk_name }}"
 
+      # Upload artifact
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: aX360e-${{ steps.meta.outputs.version_name }}
-          path: app/build/outputs/apk/${{ steps.meta.outputs.apk_name }}
+          path: app/build/outputs/apk/release/${{ steps.meta.outputs.apk_name }}
 
+      # Create GitHub Release
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ax360e-${{ steps.meta.outputs.version_name }}
           name: aX360e ${{ steps.meta.outputs.version_name }}
-          files: app/build/outputs/apk/${{ steps.meta.outputs.apk_name }}
+          files: app/build/outputs/apk/release/${{ steps.meta.outputs.apk_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
