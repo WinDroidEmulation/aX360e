@@ -32,12 +32,6 @@ jobs:
         run: |
           cp app/build.gradle.bak app/build.gradle
 
-          # ❌ ONLY THIS LINE REMOVED (free conversion)
-          # sed -i 's/applicationId "aenu.ax360e.free"/applicationId "aenu.ax360e"/g' app/build.gradle
-
-          # ✅ KEEP signing injection (important)
-          perl -0pi -e 's/signingConfigs\s*\{\s*\}/signingConfigs {\n        release {\n            storeFile file("release.jks")\n            storePassword System.getenv("KEYSTORE_PASSWORD")\n            keyAlias System.getenv("KEY_ALIAS")\n            keyPassword System.getenv("KEY_PASSWORD")\n        }\n    }/s' app/build.gradle
-
       - name: Detect Version Name
         id: meta
         run: |
