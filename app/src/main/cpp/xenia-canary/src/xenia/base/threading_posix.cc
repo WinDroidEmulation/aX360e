@@ -102,9 +102,6 @@ enum class SignalType {
 #endif
   k_Count
 };
-#if XE_PLATFORM_AX360E
-static std::atomic<void*> g_thr_user_callback{ nullptr};
-#endif
 int GetSystemSignal(SignalType num) {
   auto result = SIGRTMIN + static_cast<int>(num);
   assert_true(result < SIGRTMAX);
@@ -813,8 +810,6 @@ class PosixCondition<Thread> final : public PosixConditionBase {
     sigval value{};
     value.sival_ptr = this;
 #if XE_PLATFORM_AX360E
-      assert_zero(g_thr_user_callback.load());
-    g_thr_user_callback.store( this);
       pthread_kill(thread_,GetSystemSignal(SignalType::kThreadUserCallback));
 #elif XE_PLATFORM_ANDROID
     sigqueue(pthread_gettid_np(thread_),
@@ -1383,17 +1378,18 @@ static void signal_handler(int signal, siginfo_t* info, void* context) {
     } break;
     case SignalType::kThreadUserCallback: {
 #if XE_PLATFORM_AX360E
-        void* ptr=g_thr_user_callback.load();
-        assert_not_null(ptr);
-        g_thr_user_callback.store(nullptr);
-        auto p_thread =static_cast<PosixCondition<Thread>*>(ptr);
+        if (!current_thread_||!alertable_state_) {
+            return;
+        }
+        current_thread_->condition().CallUserCallback();
 #else
         assert_not_null(info->si_value.sival_ptr);
         auto p_thread = static_cast<PosixCondition<Thread>*>(info->si_value.sival_ptr);
-#endif
+
         if (alertable_state_) {
             p_thread->CallUserCallback();
         }
+#endif
       } break;
 #if XE_PLATFORM_ANDROID||XE_PLATFORM_AX360E
     case SignalType::kThreadTerminate: {
