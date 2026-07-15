@@ -297,7 +297,6 @@ class VulkanPresenter final : public Presenter {
       ~Submission();
 
       VkSemaphore acquire_semaphore() const { return acquire_semaphore_; }
-      VkSemaphore present_semaphore() const { return present_semaphore_; }
       VkCommandPool draw_command_pool() const { return draw_command_pool_; }
       VkCommandBuffer draw_command_buffer() const {
         return draw_command_buffer_;
@@ -310,7 +309,6 @@ class VulkanPresenter final : public Presenter {
 
       const VulkanDevice* vulkan_device_;
       VkSemaphore acquire_semaphore_ = VK_NULL_HANDLE;
-      VkSemaphore present_semaphore_ = VK_NULL_HANDLE;
       VkCommandPool draw_command_pool_ = VK_NULL_HANDLE;
       VkCommandBuffer draw_command_buffer_ = VK_NULL_HANDLE;
     };
@@ -442,6 +440,7 @@ class VulkanPresenter final : public Presenter {
     bool swapchain_is_fifo = false;
     std::vector<VkImage> swapchain_images;
     std::vector<SwapchainFramebuffer> swapchain_framebuffers;
+    std::vector<VkSemaphore> present_semaphores;
   };
 
   explicit VulkanPresenter(HostGpuLossCallback host_gpu_loss_callback,
