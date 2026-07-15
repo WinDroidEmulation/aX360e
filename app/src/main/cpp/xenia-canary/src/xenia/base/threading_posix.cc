@@ -280,12 +280,19 @@ class PosixConditionBase {
       bool all_locked = true;
 
       for (size_t i = 0; i < handles.size(); ++i) {
+#if XE_PLATFORM_AX360E 
+        if (handles[i]->mutex_.try_lock()) {
+          locks.emplace_back(handles[i]->mutex_, std::adopt_lock);
+        } else {
+          all_locked = false;
+          break;
+        }
+#else
         // Try to lock, handling robust mutex EOWNERDEAD case
         auto native_mutex =
             static_cast<pthread_mutex_t*>(handles[i]->mutex_.native_handle());
         int result = pthread_mutex_trylock(native_mutex);
 
-#if !XE_PLATFORM_AX360E
         if (result == 0 || result == EOWNERDEAD) {
           // Successfully acquired lock or recovered from dead owner
           if (result == EOWNERDEAD) {
@@ -295,13 +302,6 @@ class PosixConditionBase {
           locks.emplace_back(handles[i]->mutex_, std::adopt_lock);
         } else {
           // Couldn't acquire lock
-          all_locked = false;
-          break;
-        }
-#else
-        if (result == 0) {
-          locks.emplace_back(handles[i]->mutex_, std::adopt_lock);
-        } else {
           all_locked = false;
           break;
         }
