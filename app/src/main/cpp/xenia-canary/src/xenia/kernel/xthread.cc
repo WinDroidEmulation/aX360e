@@ -11,6 +11,7 @@
 
 #if !XE_PLATFORM_WIN32
 #include <signal.h>
+#include <exception>
 #endif
 
 #include "xenia/base/byte_stream.h"
@@ -46,6 +47,18 @@ const uint32_t XAPC::kDummyKernelRoutine;
 const uint32_t XAPC::kDummyRundownRoutine;
 
 using namespace xe::literals;
+
+#if XE_PLATFORM_AX360E
+static thread_local std::jmp_buf* tls_fiber_reentry_jmpbuf = nullptr;
+
+static void fiber_reentry_terminate_handler() {
+  if (tls_fiber_reentry_jmpbuf) {
+    std::longjmp(*tls_fiber_reentry_jmpbuf, 1);
+  }
+  //
+  std::abort();
+}
+#endif
 
 uint32_t next_xthread_id_ = 0;
 
@@ -575,7 +588,65 @@ void XThread::Execute() {
   // On Windows, setjmp/longjmp is used because MSVC's longjmp performs SEH
   // stack unwinding which already calls destructors.
   uint32_t next_address;
-#if !XE_PLATFORM_WIN32
+#if XE_PLATFORM_AX360E
+  // FiberReentryException有极低概率不被捕获，失败后的解决方案
+  // 修正错误 "terminating due to uncaught exception of type xe::kernel::FiberReentryException"
+
+  auto old_terminate = std::set_terminate(fiber_reentry_terminate_handler);
+  tls_fiber_reentry_jmpbuf = &reentry_jmp_buf_;
+
+  if (setjmp(reentry_jmp_buf_) == 0) {
+    try {
+      exit_code = static_cast<int>(kernel_state()->processor()->Execute(
+          thread_state_, address, args.data(), args.size()));
+      next_address = 0;
+    } catch (const FiberReentryException& e) {
+#if XE_PLATFORM_LINUX
+      // Ensure SIGRTMIN (used for thread suspend) is not left blocked.
+      sigset_t set;
+      sigemptyset(&set);
+      sigaddset(&set, SIGRTMIN);
+      pthread_sigmask(SIG_UNBLOCK, &set, nullptr);
+#endif
+      next_address = e.address;
+    }
+  }
+  else{
+        XELOGW("XThread::Execute longjmp FALLBACK: thread='{}', next_addr={:08X}",
+               thread_name_, pending_reenter_address_);
+        next_address = pending_reenter_address_;
+        pending_reenter_address_ = 0;
+  }
+
+  while (next_address != 0) {
+      if (setjmp(reentry_jmp_buf_) == 0) {
+        try {
+          kernel_state()->processor()->ExecuteRaw(thread_state_, next_address);
+          next_address = 0;
+          if (want_exit_code) {
+            exit_code = static_cast<int>(thread_state_->context()->r[3]);
+          }
+        } catch (const FiberReentryException& e) {
+#if XE_PLATFORM_LINUX
+          sigset_t set;
+          sigemptyset(&set);
+          sigaddset(&set, SIGRTMIN);
+          pthread_sigmask(SIG_UNBLOCK, &set, nullptr);
+#endif
+          next_address = e.address;
+        }
+      } else {
+        XELOGW("XThread::Execute longjmp FALLBACK: thread='{}', next_addr={:08X}",
+               thread_name_, pending_reenter_address_);
+        next_address = pending_reenter_address_;
+        pending_reenter_address_ = 0;
+      }
+    }
+
+  std::set_terminate(old_terminate);
+  tls_fiber_reentry_jmpbuf = nullptr;
+
+#elif !XE_PLATFORM_WIN32
   try {
     exit_code = static_cast<int>(kernel_state()->processor()->Execute(
         thread_state_, address, args.data(), args.size()));
@@ -643,6 +714,9 @@ void XThread::Reenter(uint32_t address) {
   // Throw a C++ exception that unwinds through JIT frames (using DWARF
   // .eh_frame info) and host frames (using compiler-generated DWARF),
   // calling destructors properly along the way.
+#if XE_PLATFORM_AX360E
+  pending_reenter_address_ = address;
+#endif
   throw FiberReentryException{address};
 #else
   reentry_address_ = address;

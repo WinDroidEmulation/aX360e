@@ -19,7 +19,7 @@
 #include <csignal>
 #include <mutex>
 #endif
-#if XE_PLATFORM_WIN32
+#if XE_PLATFORM_WIN32||XE_PLATFORM_AX360E
 #include <csetjmp>
 #endif
 #include "xenia/base/threading.h"
@@ -525,6 +525,9 @@ class XThread : public XObject, public cpu::Thread {
 #if XE_PLATFORM_WIN32
   std::jmp_buf reentry_jmp_buf_;
   uint32_t reentry_address_ = 0;
+#elif XE_PLATFORM_AX360E
+  std::jmp_buf reentry_jmp_buf_;
+  uint32_t pending_reenter_address_ = 0;
 #endif
 
   std::mutex thread_lock_;
