@@ -84,7 +84,21 @@ void XObject::Retain() { ++pointer_ref_count_; }
 
 void XObject::Release() {
   if (--pointer_ref_count_ == 0) {
-    delete this;
+#if XE_PLATFORM_AX360E
+      if(this->type()==Type::Thread){
+          std::thread([this]{
+              // 延迟销毁mutex
+              // 修正错误 "FORTIFY: pthread_mutex_lock called on a destroyed mutex"
+              std::this_thread::sleep_for(std::chrono::milliseconds(66));
+              delete this;
+          }).detach();
+      }
+      else{
+          delete this;
+      }
+#else
+      delete this;
+#endif
   }
 }
 
