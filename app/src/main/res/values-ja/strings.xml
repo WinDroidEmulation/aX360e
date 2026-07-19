@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="edit_custom_config">カスタム設定を編集</string>
+    <string name="game_patches">ゲームパッチ</string>
+    <string name="patches_no_match">このゲームのパッチが見つかりません</string>
+    <string name="apply">適用</string>
+    <string name="game_info">ゲーム情報</string>
+    <string name="patch_settings_saved">パッチ設定を保存しました</string>
+
     <string name="es_apu_xma_decoder">Xma デコーダー</string>
     <string name="es_cpu_disable_context_promotion">コンテキストプロモーションを無効にする</string>
     <string name="es_cpu_disable_instruction_infocache">命令インフォキャッシュを無効にする</string>

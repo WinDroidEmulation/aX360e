@@ -17,6 +17,14 @@
 
 //#include "cpptoml/include/cpptoml.h"
 
+#include <fcntl.h>
+#include <unistd.h>
+#include <algorithm>
+
+#include <android/log.h>
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "ax360e", __VA_ARGS__)
+#define LOGW(...) __android_log_print(ANDROID_LOG_WARN, "ax360e", __VA_ARGS__)
+
 jclass g_class_DocumentFile;
 jclass g_class_Emulator;
 
@@ -26,8 +34,9 @@ jobject g_doocument_file_tree;
 jmethodID mid_open_uri_fd;
 
 std::vector<std::string> g_launch_args;
-std::string g_uri_info_list_file_path;
 std::string g_native_lib_dir;
+
+extern JavaVM* g_jvm;
 static void j_setup_context(JNIEnv* env,jobject self,jobject context ){
     g_context = env->NewGlobalRef(context);
     //getApplicationInfo().nativeLibraryDir;
@@ -141,6 +150,7 @@ static jobject j_meta_info_from_god_game(JNIEnv* env,jobject self,jobject contex
     jfieldID fid_name = env->GetFieldID(cls_Emulator$GameInfo, "name", "Ljava/lang/String;");
     jfieldID fid_uri = env->GetFieldID(cls_Emulator$GameInfo, "uri", "Ljava/lang/String;");
     jfieldID fid_icon = env->GetFieldID(cls_Emulator$GameInfo, "icon", "[B");
+    jfieldID fid_title_id = env->GetFieldID(cls_Emulator$GameInfo, "title_id", "Ljava/lang/String;");
 
     jclass uri_class = env->FindClass("android/net/Uri");
     jmethodID parse_method = env->GetStaticMethodID(uri_class, "parse", "(Ljava/lang/String;)Landroid/net/Uri;");
@@ -171,6 +181,14 @@ static jobject j_meta_info_from_god_game(JNIEnv* env,jobject self,jobject contex
 
     std::string name = xe::to_utf8(header.content_metadata.title_name());
     env->SetObjectField(game_info, fid_name, env->NewStringUTF(name.c_str()));
+
+    // Set title_id
+    {
+        uint32_t tid = static_cast<uint32_t>(header.content_metadata.execution_info.title_id);
+        char tid_buf[9];
+        snprintf(tid_buf, sizeof(tid_buf), "%08X", tid);
+        env->SetObjectField(game_info, fid_title_id, env->NewStringUTF(tid_buf));
+    }
 
     jbyteArray icon = env->NewByteArray(header.content_metadata.thumbnail_size);
     env->SetByteArrayRegion(icon, 0, header.content_metadata.thumbnail_size, (const jbyte*)header.content_metadata.thumbnail);
@@ -684,11 +702,179 @@ static jstring generate_config_xml(JNIEnv* env,jobject self,jstring toml_path){
 #undef CHECKBOX_PREF_TAG
 #undef LIST_PREF_TAG
 
-//public  native void setup_uri_info_list_file(String path);
-static void j_setup_uri_info_list_file(JNIEnv* env,jobject self,jstring jpath ){
-    const char* path = env->GetStringUTFChars(jpath,NULL);
-    g_uri_info_list_file_path=path;
-    env->ReleaseStringUTFChars(jpath,path);
+static jobject game_metadata_to_jobject(JNIEnv* env, jstring uri_str,
+                                         const xe::Emulator::GameMetadata& meta) {
+    jclass cls_GameInfo = env->FindClass("aenu/ax360e/Emulator$GameInfo");
+    jmethodID mid_GameInfo = env->GetMethodID(cls_GameInfo, "<init>", "()V");
+    jfieldID fid_uri = env->GetFieldID(cls_GameInfo, "uri", "Ljava/lang/String;");
+    jfieldID fid_name = env->GetFieldID(cls_GameInfo, "name", "Ljava/lang/String;");
+    jfieldID fid_icon = env->GetFieldID(cls_GameInfo, "icon", "[B");
+    jfieldID fid_title_id = env->GetFieldID(cls_GameInfo, "title_id", "Ljava/lang/String;");
+
+    jobject game_info = env->NewObject(cls_GameInfo, mid_GameInfo);
+    env->SetObjectField(game_info, fid_uri, uri_str);
+
+    if (!meta.title_name.empty()) {
+        env->SetObjectField(game_info, fid_name, env->NewStringUTF(meta.title_name.c_str()));
+    }
+
+    if (!meta.icon.empty()) {
+        jbyteArray icon = env->NewByteArray(meta.icon.size());
+        env->SetByteArrayRegion(icon, 0, meta.icon.size(), (const jbyte*)meta.icon.data());
+        env->SetObjectField(game_info, fid_icon, icon);
+    }
+
+    if (meta.title_id) {
+        char tid_buf[9];
+        snprintf(tid_buf, sizeof(tid_buf), "%08X", meta.title_id);
+        env->SetObjectField(game_info, fid_title_id, env->NewStringUTF(tid_buf));
+    }
+
+    return game_info;
+}
+
+//public native GameInfo meta_info_from_iso_game(Context ctx,DocumentFile file)
+static jobject j_meta_info_from_iso_game(JNIEnv* env, jobject self, jobject context, jobject doc_file) {
+
+    // DocumentFile::open_fd
+    g_context = context;
+
+    auto file = std::make_unique<DocumentFile>(g_jvm, doc_file);
+
+    if (!file) {
+        return nullptr;
+    }
+
+    xe::Emulator::GameMetadata meta;
+    {
+        xe::Emulator fetcher{"","","",""};
+        if (!fetcher.GetGameMetadata(
+                std::move(file), "",
+                xe::Emulator::FileSignatureType::XISO, meta)) {
+            LOGW("Failed to get game metadata");
+            return nullptr;
+        }
+    }
+
+    jmethodID mid_get_uri = env->GetMethodID(env->GetObjectClass(doc_file), "getUri", "()Landroid/net/Uri;");
+    jobject uri = (jstring)env->CallObjectMethod(doc_file, mid_get_uri);
+    jmethodID mid_uri_to_str = env->GetMethodID(env->GetObjectClass(uri), "toString", "()Ljava/lang/String;");
+    jstring uri_str = (jstring)env->CallObjectMethod(uri, mid_uri_to_str);
+    return game_metadata_to_jobject(env, uri_str, meta);
+}
+
+// public native GameInfo meta_info_from_zar_game(Context ctx,DocumentFile file)
+static jobject j_meta_info_from_zar_game(JNIEnv* env, jobject self, jobject context, jobject doc_file) {
+
+    // DocumentFile::open_fd
+    g_context = context;
+
+    auto file = std::make_unique<DocumentFile>(g_jvm, doc_file);
+    if (!file) {
+        return nullptr;
+    }
+
+    xe::Emulator::GameMetadata meta;
+    {
+        xe::Emulator fetcher{"","","",""};
+        if (!fetcher.GetGameMetadata(
+                std::move(file), "",
+                xe::Emulator::FileSignatureType::ZAR, meta)) {
+            LOGW("Failed to get game metadata");
+            return nullptr;
+        }
+    }
+
+    jmethodID mid_get_uri = env->GetMethodID(env->GetObjectClass(doc_file), "getUri", "()Landroid/net/Uri;");
+    jobject uri = (jstring)env->CallObjectMethod(doc_file, mid_get_uri);
+    jmethodID mid_uri_to_str = env->GetMethodID(env->GetObjectClass(uri), "toString", "()Ljava/lang/String;");
+    jstring uri_str = (jstring)env->CallObjectMethod(uri, mid_uri_to_str);
+    return game_metadata_to_jobject(env, uri_str, meta);
+}
+
+static jobject j_meta_info_from_xex_game(JNIEnv* env, jobject self, jobject context,
+                                         jobject uri_boot_xex, jobject document_file_tree) {
+
+    // DocumentFile::open_fd
+    g_context = context;
+    g_doocument_file_tree= document_file_tree;
+
+    std::unique_ptr<DocumentFile> xex_file=DocumentFile::find(g_jvm, uri_boot_xex);
+    std::string xex_name=xex_file->getName();
+
+    xe::Emulator::GameMetadata meta;
+    {
+        xe::Emulator fetcher{"","","",""};
+        if (!fetcher.GetGameMetadata( std::move(xex_file), xex_name,
+                                      xe::Emulator::FileSignatureType::XEX1, meta)) {
+
+            return nullptr;
+        }
+    }
+
+    jmethodID mid_uri_to_str = env->GetMethodID(env->GetObjectClass(uri_boot_xex), "toString", "()Ljava/lang/String;");
+    jstring uri_str = (jstring)env->CallObjectMethod(uri_boot_xex, mid_uri_to_str);
+    return game_metadata_to_jobject(env, uri_str, meta);
+}
+
+static jstring j_title_id_from_xex(JNIEnv* env, jobject self, jint xex_fd) {
+
+    lseek(xex_fd, 0, SEEK_SET);
+
+    // Read XEX header
+    xe::be<uint32_t> magic;
+    if (read(xex_fd, &magic, 4) != 4 || magic != 0x58455832) { // 'XEX2'
+        return nullptr;
+    }
+
+    lseek(xex_fd, 0x14, SEEK_SET);
+    xe::be<uint32_t> header_count;
+    if (read(xex_fd, &header_count, 4) != 4) {
+        return nullptr;
+    }
+
+    uint32_t count = static_cast<uint32_t>(header_count);
+    if (count > 256) {
+        return nullptr;
+    }
+
+    // Read all optional headers
+    struct OptHdr {
+        xe::be<uint32_t> key;
+        xe::be<uint32_t> value_or_offset;
+    };
+    std::vector<OptHdr> opt_headers(count);
+    if (read(xex_fd, opt_headers.data(), count * sizeof(OptHdr)) != (ssize_t)(count * sizeof(OptHdr))) {
+        return nullptr;
+    }
+
+    // Find execution info header (key = 0x00040006)
+    uint32_t exec_offset = 0;
+    bool found = false;
+    for (uint32_t i = 0; i < count; i++) {
+        if (static_cast<uint32_t>(opt_headers[i].key) == 0x00040006) {
+            exec_offset = static_cast<uint32_t>(opt_headers[i].value_or_offset);
+            found = true;
+            break;
+        }
+    }
+
+    if (!found || exec_offset == 0) {
+        return nullptr;
+    }
+
+    // Read execution info struct
+    lseek(xex_fd, exec_offset, SEEK_SET);
+    xe::be<uint32_t> exec_data[6]; // media_id, version, base_version, title_id, ...
+    if (read(xex_fd, exec_data, sizeof(exec_data)) != sizeof(exec_data)) {
+        return nullptr;
+    }
+
+    uint32_t title_id = static_cast<uint32_t>(exec_data[3]); // title_id at offset 0xC
+    char tid_buf[9];
+    snprintf(tid_buf, sizeof(tid_buf), "%08X", title_id);
+
+    return env->NewStringUTF(tid_buf);
 }
 
 int register_ax360e_Emulator(JNIEnv* env){
@@ -707,9 +893,12 @@ int register_ax360e_Emulator(JNIEnv* env){
             { "setup_document_file_tree", "(Landroidx/documentfile/provider/DocumentFile;)V", (void *) j_setup_document_file_tree },
             { "setup_launch_args", "([Ljava/lang/String;)V", (void *) j_setup_launch_args },
             { "meta_info_from_god_game", "(Landroid/content/Context;Ljava/lang/String;)Laenu/ax360e/Emulator$GameInfo;", (void *) j_meta_info_from_god_game },
-            { "setup_uri_info_list_file", "(Ljava/lang/String;)V", (void *) j_setup_uri_info_list_file },
             {"simple_device_info", "()Ljava/lang/String;", (void *) j_simple_device_info}
             ,{"generate_config_xml", "(Ljava/lang/String;)Ljava/lang/String;", (void *) generate_config_xml}
+            ,{"meta_info_from_iso_game", "(Landroid/content/Context;Landroidx/documentfile/provider/DocumentFile;)Laenu/ax360e/Emulator$GameInfo;", (void *) j_meta_info_from_iso_game}
+            ,{"meta_info_from_zar_game", "(Landroid/content/Context;Landroidx/documentfile/provider/DocumentFile;)Laenu/ax360e/Emulator$GameInfo;", (void *) j_meta_info_from_zar_game}
+            ,{"meta_info_from_xex_game", "(Landroid/content/Context;Landroid/net/Uri;Landroidx/documentfile/provider/DocumentFile;)Laenu/ax360e/Emulator$GameInfo;", (void *) j_meta_info_from_xex_game}
+            ,{"title_id_from_xex", "(I)Ljava/lang/String;", (void *) j_title_id_from_xex}
     };
     return env->RegisterNatives(g_class_Emulator,methods, sizeof(methods)/sizeof(methods[0]));
 }

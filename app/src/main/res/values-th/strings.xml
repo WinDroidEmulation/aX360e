@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="edit_custom_config">แก้ไขการกำหนดค่าเอง</string>
+    <string name="game_patches">แพตช์เกม</string>
+    <string name="patches_no_match">ไม่พบแพตช์สำหรับเกมนี้</string>
+    <string name="apply">ใช้</string>
+    <string name="game_info">ข้อมูลเกม</string>
+    <string name="patch_settings_saved">บันทึกการตั้งค่าแพตช์แล้ว</string>
+
     <string name="es_apu_xma_decoder">ตัวถอดรหัส Xma</string>
     <string name="es_cpu_disable_context_promotion">ปิดการโปรโมตคอนเท็กซ์</string>
     <string name="es_cpu_disable_instruction_infocache">ปิดอินโฟแคชคำสั่ง</string>

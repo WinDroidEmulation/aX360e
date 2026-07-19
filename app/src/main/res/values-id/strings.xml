@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="edit_custom_config">Edit Konfigurasi Kustom</string>
+    <string name="game_patches">Patch Game</string>
+    <string name="patches_no_match">Tidak ada patch yang ditemukan untuk game ini</string>
+    <string name="apply">Terapkan</string>
+    <string name="game_info">Info Game</string>
+    <string name="patch_settings_saved">Pengaturan patch disimpan</string>
+
     <string name="es_apu_xma_decoder">Dekoder Xma</string>
     <string name="es_cpu_disable_context_promotion">Nonaktifkan Promosi Konteks</string>
     <string name="es_cpu_disable_instruction_infocache">Nonaktifkan Infocache Instruksi</string>

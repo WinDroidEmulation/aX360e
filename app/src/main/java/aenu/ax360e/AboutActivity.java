@@ -65,6 +65,10 @@ public class AboutActivity extends AppCompatActivity {
                 + " *部分修正\n"
                 +"1.17(2026-06-20)\n"
                 + " *部分修正\n"
+                +"1.17(2026-07-19)\n"
+                + " *部分修正与优化\n"
+                + " *自定义配置\n"
+                + " *补丁支持\n"
                 + " \n";
 
         return log;

@@ -505,34 +505,12 @@ void EmulatorApp::emu_thr_main() {
                     return debug_window_.get();
                 });
     }*/
-#if 1
     emu->on_launch.AddListener([&](auto title_id, const auto& game_title) {
         XELOGI("on_launch {}",
                game_title.empty() ? "Unknown Title" : std::string(game_title));
-        app_context().CallInUIThread([this]() { emu_window->UpdateTitle(); });
+        //app_context().CallInUIThread([this]() { emu_window->UpdateTitle(); });
         emu_thr_event->Set();
     });
-#else
-    emu->on_launch.AddListener([&](auto title_id, const auto& game_title) {
-        /*nlohmann::json json;
-        if(std::filesystem::exists(g_uri_info_list_file_path)){
-            std::ifstream json_file(g_uri_info_list_file_path);
-            json = nlohmann::json::parse(json_file);
-            json_file.close();
-        }
-        if(!game_title.empty()){
-            nlohmann::json info;
-            info["name"] = game_title;
-
-            json[cvars::target.string()]=info;
-        }
-        std::ofstream json_file(g_uri_info_list_file_path);
-        json_file << json;
-        json_file.close();
-
-        emu_thr_event->Set();*/
-    });
-#endif
     emu->on_shader_storage_initialization.AddListener(
             [this](bool initializing) {
                 XELOGI("Shader storage initialization: {}", initializing);
@@ -692,7 +670,7 @@ namespace ae{
         }();
         LOGW("new thr: %s",tid.c_str());
 
-        prctl(PR_SET_TIMERSLACK,1,0,0,0);
+        //prctl(PR_SET_TIMERSLACK,1,0,0,0);
 
         AndroidWindowedAppContext wnd_ctx;
         wnd_ctx.setup_ui_thr_id(std::this_thread::get_id());

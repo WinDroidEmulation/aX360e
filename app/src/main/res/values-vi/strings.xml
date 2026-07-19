@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="edit_custom_config">Chỉnh sửa cấu hình tùy chỉnh</string>
+    <string name="game_patches">Bản vá trò chơi</string>
+    <string name="patches_no_match">Không tìm thấy bản vá cho trò chơi này</string>
+    <string name="apply">Áp dụng</string>
+    <string name="game_info">Thông tin trò chơi</string>
+    <string name="patch_settings_saved">Đã lưu cài đặt bản vá</string>
+
     <string name="es_apu_xma_decoder">Bộ giải mã Xma</string>
     <string name="es_cpu_disable_context_promotion">Tắt quảng bá ngữ cảnh</string>
     <string name="es_cpu_disable_instruction_infocache">Tắt bộ nhớ đệm thông tin lệnh</string>

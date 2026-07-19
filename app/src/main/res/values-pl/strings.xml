@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="edit_custom_config">Edytuj Niestandardową Konfigurację</string>
+    <string name="game_patches">Patche Gry</string>
+    <string name="patches_no_match">Nie znaleziono patchy do tej gry</string>
+    <string name="apply">Zastosuj</string>
+    <string name="game_info">Informacje o Grze</string>
+    <string name="patch_settings_saved">Ustawienia patchy zapisane</string>
+
     <string name="es_apu_xma_decoder">Dekoder Xma</string>
     <string name="es_cpu_disable_context_promotion">Wyłącz promocję kontekstu</string>
     <string name="es_cpu_disable_instruction_infocache">Wyłącz pamięć podręczną instrukcji</string>

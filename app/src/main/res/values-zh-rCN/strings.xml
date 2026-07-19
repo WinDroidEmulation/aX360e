@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="edit_custom_config">编辑自定义配置</string>
+    <string name="game_patches">游戏补丁</string>
+    <string name="patches_no_match">未找到此游戏的补丁</string>
+    <string name="apply">应用</string>
+    <string name="game_info">游戏信息</string>
+    <string name="patch_settings_saved">补丁设置已保存</string>
+
     <string name="es_apu_xma_decoder">Xma 解码器</string>
     <string name="es_cpu_disable_context_promotion">禁用上下文提升</string>
     <string name="es_cpu_disable_instruction_infocache">禁用指令信息缓存</string>

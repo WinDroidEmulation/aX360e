@@ -809,6 +809,148 @@ X_STATUS Emulator::LaunchDefaultModule(const std::filesystem::path& path) {
         kernel_state_->deployment_type_ = XDeploymentType::kDownload;
         return result;
 }
+
+
+#include <android/log.h>
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, "ax360e", __VA_ARGS__)
+#define LOGW(...) __android_log_print(ANDROID_LOG_WARN, "ax360e", __VA_ARGS__)
+bool Emulator::GetGameMetadata(std::unique_ptr<DocumentFile> path,
+                             const std::string& file_name,
+                             FileSignatureType type,
+                               GameMetadata& out_meta) {
+    //setup
+
+    Clock::set_guest_tick_frequency(50000000);
+        Clock::set_guest_system_time_base(Clock::QueryHostSystemTime());
+        Clock::set_guest_time_scalar(cvars::time_scalar);
+
+        xe::threading::EnableAffinityConfiguration();
+
+        memory_ = std::make_unique<Memory>();
+        if (!memory_->Initialize()) {
+            XELOGE("SetupForMetadata: Cannot initialize memory");
+            return X_STATUS_UNSUCCESSFUL;
+        }
+
+        export_resolver_ = std::make_unique<xe::cpu::ExportResolver>();
+
+        std::unique_ptr<xe::cpu::backend::Backend> backend;
+#if XE_ARCH_ARM64
+        backend = std::make_unique<xe::cpu::backend::a64::A64Backend>();
+#elif XE_ARCH_AMD64
+        backend = std::make_unique<xe::cpu::backend::x64::X64Backend>();
+#endif
+        if (!backend) {
+            backend = std::make_unique<xe::cpu::backend::NullBackend>();
+        }
+
+        processor_ = std::make_unique<xe::cpu::Processor>(memory_.get(),
+                                                          export_resolver_.get());
+        if (!processor_->Setup(std::move(backend))) {
+            XELOGE("SetupForMetadata: Cannot initialize processor");
+            return X_STATUS_UNSUCCESSFUL;
+        }
+
+        file_system_ = std::make_unique<xe::vfs::VirtualFileSystem>();
+
+        kernel_state_ = std::make_unique<xe::kernel::KernelState>(this);
+        kernel_state_->LoadKernelModule<kernel::xboxkrnl::XboxkrnlModule>();
+        kernel_state_->LoadKernelModule<kernel::xam::XamModule>();
+        kernel_state_->LoadKernelModule<kernel::xbdm::XbdmModule>();
+
+
+    // Determine mount point based on file type
+    std::string_view mount_device;
+
+    switch (type) {
+        case FileSignatureType::XEX1:
+        case FileSignatureType::XEX2:
+        case FileSignatureType::ELF:
+            mount_device = "\\Device\\Harddisk0\\Partition1";
+            break;
+        default:
+            mount_device = "\\Device\\Cdrom0";
+            break;
+    }
+    // Mount the VFS device
+    X_STATUS mount_result = MountPath(std::move(path), nullptr,
+                                      type, mount_device);
+    if (XFAILED(mount_result)) {
+        return false;
+    }
+
+    // Determine the module path to load
+    std::string module_path;
+    if (type == FileSignatureType::XEX1 || type == FileSignatureType::XEX2 ||
+        type == FileSignatureType::ELF) {
+        module_path = fmt::format("{}\\", kDefaultGameSymbolicLink) + file_name;
+    } else {
+        module_path = FindLaunchModule();
+    }
+
+    // Register NullDevice for raw HDD partition accesses (same as CompleteLaunch)
+    auto null_paths = {std::string("\\Partition0"), std::string("\\Cache0"),
+                       std::string("\\Cache1")};
+    auto null_device =
+        std::make_unique<vfs::NullDevice>("\\Device\\Harddisk0", null_paths);
+    if (null_device->Initialize()) {
+        file_system_->RegisterDevice(std::move(null_device));
+    }
+
+    // Load the user module
+    LOGW("GetGameMetadata: Loading module %s", module_path.c_str());
+    auto module = kernel_state_->LoadUserModule(module_path);
+    if (!module) {
+        LOGE("GetGameMetadata: Failed to load user module %s", module_path.c_str());
+        // Cleanup VFS
+        file_system_->UnregisterSymbolicLink(kDefaultPartitionSymbolicLink);
+        file_system_->UnregisterSymbolicLink(kDefaultGameSymbolicLink);
+        file_system_->UnregisterDevice(mount_device);
+        return false;
+    }
+
+    if (!module->is_executable()) {
+        kernel_state_->UnloadUserModule(module, false);
+        LOGE("GetGameMetadata: Module is not executable %s", module_path.c_str());
+        file_system_->UnregisterSymbolicLink(kDefaultPartitionSymbolicLink);
+        file_system_->UnregisterSymbolicLink(kDefaultGameSymbolicLink);
+        file_system_->UnregisterDevice(mount_device);
+        return false;
+    }
+
+    // Extract title_id from execution info opt header
+    xex2_opt_execution_info* info = nullptr;
+    module->GetOptHeader(XEX_HEADER_EXECUTION_INFO, &info);
+    if (info) {
+        out_meta.title_id = info->title_id;
+    }
+
+    // Extract title name and icon from XDBF (resource database)
+    if (module->title_id()) {
+        const auto db = kernel_state_->module_xdbf(module);
+        if (db) {
+            auto game_db = std::make_unique<kernel::util::GameInfoDatabase>(db.get());
+            if (game_db->IsValid()) {
+                out_meta.title_name = game_db->GetTitleName(
+                    static_cast<XLanguage>(cvars::user_language));
+                LOGW("GetGameMetadata: Title name: %s", out_meta.title_name.c_str());
+
+                auto icon_block = game_db->GetIcon();
+                if (!icon_block.empty()) {
+                    out_meta.icon = std::move(icon_block);
+                }
+            }
+        }
+    }
+
+    // Cleanup: unload module and unmount VFS
+    kernel_state_->UnloadUserModule(module, false);
+    file_system_->UnregisterSymbolicLink(kDefaultPartitionSymbolicLink);
+    file_system_->UnregisterSymbolicLink(kDefaultGameSymbolicLink);
+    file_system_->UnregisterDevice(mount_device);
+
+    return true;
+}
 #endif
 X_STATUS Emulator::DataMigration(const uint64_t xuid) {
   uint32_t failure_count = 0;

@@ -1,6 +1,12 @@
 <resources>
     <string name="app_name">aX360e Free</string>
 
+    <string name="edit_custom_config">Edit Custom Config</string>
+    <string name="game_patches">Game Patches</string>
+    <string name="patches_no_match">No patches found for this game</string>
+    <string name="apply">Apply</string>
+    <string name="game_info">Game Info</string>
+    <string name="patch_settings_saved">Patch settings saved</string>
 
     <string name="es_apu_xma_decoder">Xma Decoder</string>
     <string name="es_cpu_disable_context_promotion">Disable Context Promotion</string>

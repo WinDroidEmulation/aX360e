@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="edit_custom_config">사용자 정의 설정 편집</string>
+    <string name="game_patches">게임 패치</string>
+    <string name="patches_no_match">이 게임에 대한 패치를 찾을 수 없습니다</string>
+    <string name="apply">적용</string>
+    <string name="game_info">게임 정보</string>
+    <string name="patch_settings_saved">패치 설정이 저장되었습니다</string>
+
     <string name="es_apu_xma_decoder">Xma 디코더</string>
     <string name="es_cpu_disable_context_promotion">컨텍스트 프로모션 비활성화</string>
     <string name="es_cpu_disable_instruction_infocache">명령어 인포캐시 비활성화</string>

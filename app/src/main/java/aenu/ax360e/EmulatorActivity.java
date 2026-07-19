@@ -35,6 +35,7 @@ public class EmulatorActivity extends Activity implements SurfaceHolder.Callback
 
     static final int DELAY_ON_CREATE=0xaeae0001;
     public static final String EXTRA_GAME_URI="game_uri";
+    public static final String EXTRA_CONFIG_PATH="config_path";
     static SurfaceView sf=null;
     private SparseIntArray keysMap = new SparseIntArray();
     private Vibrator vibrator=null;
@@ -57,17 +58,19 @@ public class EmulatorActivity extends Activity implements SurfaceHolder.Callback
     void on_create(){
         String uri=getIntent().getStringExtra(EXTRA_GAME_URI);
         aenu.emulator.Emulator.Path path=aenu.emulator.Emulator.Path.from(uri,-1);
+        String config_path=getIntent().getStringExtra(EXTRA_CONFIG_PATH);
+        if(config_path==null) config_path=Application.get_global_config_file().getAbsolutePath();
+
         Emulator.get.setup_context(this);
         Emulator.get.setup_document_file_tree(DocumentFile.fromTreeUri(this,MainActivity.load_pref_game_dir( this)));
         Emulator.get.setup_game_path(path);
         Emulator.get.setup_launch_args(new String[]{
-                "--storage_root="+Application.get_app_data_dir().getAbsolutePath(),
-                "--config="+Application.get_global_config_file().getAbsolutePath(),
+                "--storage_root="+Application.get_xe_storage_root().getAbsolutePath(),
+                "--config="+config_path,
                 "--log_file="+Application.get_app_data_dir().getAbsolutePath()+"/xe.log",
                 /*"--storage_root=/storage/emulated/0/Download/ax360e",
                 "--log_file=/storage/emulated/0/Download/ax360e/xe.log",*/
         });
-        Emulator.get.setup_uri_info_list_file(Application.get_uri_info_list_file().getAbsolutePath());
         setContentView(R.layout.activity_emulator);
         sf = (SurfaceView) findViewById(R.id.surface_view);
         sf.getHolder().addCallback(EmulatorActivity.this);

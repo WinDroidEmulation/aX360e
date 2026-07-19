@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="edit_custom_config">Редактировать пользовательскую конфигурацию</string>
+    <string name="game_patches">Игровые патчи</string>
+    <string name="patches_no_match">Патчи для этой игры не найдены</string>
+    <string name="apply">Применить</string>
+    <string name="game_info">Информация об игре</string>
+    <string name="patch_settings_saved">Настройки патчей сохранены</string>
+
     <string name="es_apu_xma_decoder">Декодер Xma</string>
     <string name="es_cpu_disable_context_promotion">Отключить продвижение контекста</string>
     <string name="es_cpu_disable_instruction_infocache">Отключить инфокэш инструкций</string>

@@ -393,6 +393,124 @@ static void j_save_config_entry(JNIEnv* env, jobject self, toml::table* config_t
 static void j_save_config_entry_ty_arr(JNIEnv* env, jobject self, toml::table* config_table, jstring tag, jobjectArray val) {
 }
 
+static jint j_load_config_tab_arr_size(JNIEnv* env, jobject self, toml::table* config_table, jstring tag) {
+    if (!config_table) return 0;
+
+    jboolean is_copy = false;
+    const char* tag_cstr = env->GetStringUTFChars(tag, &is_copy);
+    std::string tag_str(tag_cstr);
+    env->ReleaseStringUTFChars(tag, tag_cstr);
+
+    toml::node* node = config_table->get(tag_str);
+    if (!node || !node->is_array()) return 0;
+
+    toml::array* arr = node->as_array();
+    return (jint)arr->size();
+}
+
+static jstring j_load_config_tab_arr_entry(JNIEnv* env, jobject self, toml::table* config_table, jstring tag, jint index) {
+    if (!config_table) return NULL;
+
+    jboolean is_copy = false;
+    const char* tag_cstr = env->GetStringUTFChars(tag, &is_copy);
+    std::string tag_str(tag_cstr);
+    env->ReleaseStringUTFChars(tag, tag_cstr);
+
+    size_t pipe_pos = tag_str.find('|');
+    std::string arr_name = tag_str.substr(0, pipe_pos);
+    std::string key_name = tag_str.substr(pipe_pos + 1);
+
+    toml::node* arr_node = config_table->get(arr_name);
+    if (!arr_node || !arr_node->is_array()) return NULL;
+
+    toml::array* arr = arr_node->as_array();
+    if (index < 0 || (size_t)index >= arr->size()) return NULL;
+
+    toml::table* entry_table = (*arr)[index].as_table();
+    if (!entry_table) return NULL;
+
+    size_t sub_pipe = key_name.find('|');
+    if (sub_pipe != std::string::npos) {
+        std::string sub_arr_name = key_name.substr(0, sub_pipe);
+        std::string sub_key_name = key_name.substr(sub_pipe + 1);
+
+        toml::node* sub_arr_node = entry_table->get(sub_arr_name);
+        if (!sub_arr_node || !sub_arr_node->is_array()) return NULL;
+        toml::array* sub_arr = sub_arr_node->as_array();
+        if (sub_arr->empty()) return NULL;
+
+        size_t sub_pipe2 = sub_key_name.find('|');
+        if (sub_pipe2 != std::string::npos) {
+            int sub_idx = std::stoi(sub_key_name.substr(0, sub_pipe2));
+            std::string field = sub_key_name.substr(sub_pipe2 + 1);
+            if (sub_idx < 0 || (size_t)sub_idx >= sub_arr->size()) return NULL;
+            toml::table* sub_entry = (*sub_arr)[sub_idx].as_table();
+            if (!sub_entry) return NULL;
+            toml::node* val_node = sub_entry->get(field);
+            if (!val_node) return NULL;
+            if (val_node->is_integer()) {
+                int64_t val = *val_node->value<int64_t>();
+                char buf[32];
+                snprintf(buf, sizeof(buf), "0x%llx", (unsigned long long)val);
+                return env->NewStringUTF(buf);
+            }
+            if (val_node->is_string()) return env->NewStringUTF(val_node->value<std::string>()->c_str());
+            return NULL;
+        }
+        return NULL;
+    }
+
+    toml::node* val_node = entry_table->get(key_name);
+    if (!val_node) return NULL;
+
+    if (val_node->is_boolean()) {
+        bool val = *val_node->value<bool>();
+        return env->NewStringUTF(val ? "true" : "false");
+    }
+    else if (val_node->is_integer()) {
+        int64_t val = *val_node->value<int64_t>();
+        std::string val_str = std::to_string(val);
+        return env->NewStringUTF(val_str.c_str());
+    }
+    else if (val_node->is_string()) {
+        std::string val = *val_node->value<std::string>();
+        return env->NewStringUTF(val.c_str());
+    }
+
+    return NULL;
+}
+
+static void j_save_config_tab_arr_entry(JNIEnv* env, jobject self, toml::table* config_table, jstring tag, jint index, jstring val) {
+    if (!config_table) return;
+
+    jboolean is_copy = false;
+    const char* tag_cstr = env->GetStringUTFChars(tag, &is_copy);
+    const char* val_cstr = env->GetStringUTFChars(val, &is_copy);
+    std::string tag_str(tag_cstr);
+    std::string val_str(val_cstr);
+    env->ReleaseStringUTFChars(tag, tag_cstr);
+    env->ReleaseStringUTFChars(val, val_cstr);
+
+    size_t pipe_pos = tag_str.find('|');
+    std::string arr_name = tag_str.substr(0, pipe_pos);
+    std::string key_name = tag_str.substr(pipe_pos + 1);
+
+    toml::node* arr_node = config_table->get(arr_name);
+    if (!arr_node || !arr_node->is_array()) return;
+
+    toml::array* arr = arr_node->as_array();
+    if (index < 0 || (size_t)index >= arr->size()) return;
+
+    toml::table* entry_table = (*arr)[index].as_table();
+    if (!entry_table) return;
+
+    if (val_str == "true" || val_str == "false") {
+        entry_table->insert_or_assign(key_name, val_str == "true");
+    } else {
+        entry_table->insert_or_assign(key_name, val_str);
+    }
+}
+
 static void j_close_config_file(JNIEnv* env, jobject self, toml::table* config_table, jstring config_path) {
     if (!config_table) {
         return;
@@ -427,6 +545,9 @@ int register_Emulator$Config(JNIEnv* env){
             { "native_save_config_entry", "(JLjava/lang/String;Ljava/lang/String;)V", (void *) j_save_config_entry },
             { "native_save_config_entry_ty_arr", "(JLjava/lang/String;[Ljava/lang/String;)V", (void *) j_save_config_entry_ty_arr },
             { "native_close_config_file", "(JLjava/lang/String;)V", (void *) j_close_config_file },
+            { "native_load_config_tab_arr_size", "(JLjava/lang/String;)I", (void *) j_load_config_tab_arr_size },
+            { "native_load_config_tab_arr_entry", "(JLjava/lang/String;I)Ljava/lang/String;", (void *) j_load_config_tab_arr_entry },
+            { "native_save_config_tab_arr_entry", "(JLjava/lang/String;ILjava/lang/String;)V", (void *) j_save_config_tab_arr_entry },
     };
     jclass clazz = env->FindClass("aenu/emulator/Emulator$Config");
     return env->RegisterNatives(clazz,methods, sizeof(methods)/sizeof(methods[0]));

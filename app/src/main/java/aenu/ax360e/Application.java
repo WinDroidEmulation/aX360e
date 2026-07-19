@@ -36,28 +36,26 @@ public class Application extends android.app.Application{
         return new File(Application.get_app_data_dir(),"xenia-canary.config.toml");
     }
 
-    public  static byte[] load_assets_file(Context ctx,String asset_file_path) {
-        try {
-            InputStream in = ctx.getAssets().open(asset_file_path);
-            int size = in.available();
-            byte[] buffer = new byte[size];
-            in.read(buffer);
-            in.close();
-            return buffer;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
+    public static File get_custom_config_dir(){
+        return new File(get_app_data_dir(),"custom_config");
     }
+
+    public static File get_custom_config(String title_id){
+        return new File(get_custom_config_dir(),title_id+".config.toml");
+    }
+
+    // launch args "--storage_root"
+    public static File get_xe_storage_root(){
+        return get_app_data_dir();
+    }
+    public static File get_patches_dir(){
+        return new File(get_xe_storage_root(),"patches");
+    }
+
     static String load_default_config_str(Context ctx){
-        return new String(Application.load_assets_file(
+        return new String(Utils.load_assets_file(
                 ctx,"config/default_config.toml"));
     }
-
-    public static File get_uri_info_list_file(){
-        return new File(Application.get_app_data_dir(),"uri_info_list.json");
-    }
-
     public static File get_virtual_control_config_file(){
         return new File(Application.get_app_data_dir(),"virtual_control_config.json");
     }

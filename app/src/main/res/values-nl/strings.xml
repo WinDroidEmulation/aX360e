@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="edit_custom_config">Aangepaste Configuratie Bewerken</string>
+    <string name="game_patches">Game-patches</string>
+    <string name="patches_no_match">Geen patches gevonden voor deze game</string>
+    <string name="apply">Toepassen</string>
+    <string name="game_info">Game-info</string>
+    <string name="patch_settings_saved">Patch-instellingen opgeslagen</string>
+
     <string name="es_apu_xma_decoder">Xma-decoder</string>
     <string name="es_cpu_disable_context_promotion">Contextpromotie uitschakelen</string>
     <string name="es_cpu_disable_instruction_infocache">Instructie-infocache uitschakelen</string>

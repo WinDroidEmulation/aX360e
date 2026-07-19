@@ -43,6 +43,11 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import android.widget.CheckBox;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -63,18 +68,25 @@ import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
     public static final int REQUEST_SELECT_GAME_DIR=6004;
     static final int DELAY_ON_CREATE=0xaeae0000;
     public static final String PREF_GAME_DIR="game_dir";
-    /*public static File get_game_list_file(){
+    public static File get_game_list_file(){
         return new File(Application.get_app_data_dir(),"game_list.json");
-    }*/
+    }
 
 
     private final AdapterView.OnItemClickListener item_click_l=new AdapterView.OnItemClickListener(){
@@ -88,6 +100,12 @@ public class MainActivity extends AppCompatActivity {
             intent.setPackage(getPackageName());
 
             intent.putExtra(EmulatorActivity.EXTRA_GAME_URI,meta_info.uri);
+
+            File custom_config_file=Application.get_custom_config(meta_info.title_id);
+            if(custom_config_file.exists()){
+                intent.putExtra(EmulatorActivity.EXTRA_CONFIG_PATH, custom_config_file.getAbsolutePath());
+            }
+
             startActivity(intent);
         }
     };
@@ -156,7 +174,6 @@ public class MainActivity extends AppCompatActivity {
         list_view.setOnItemClickListener(item_click_l);
         list_view.setEmptyView(findViewById(R.id.game_list_is_empty));
 
-        if(getPackageName().equals("aenu.ax360e"))
         registerForContextMenu(list_view);
         //refresh_game_list();
         show_game_list();
@@ -278,6 +295,8 @@ AppOpenAdManager.getInstance(this).showAdIfAvailable( this);}
         super.onCreateContextMenu(menu, v, menuInfo);
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
         getMenuInflater().inflate(R.menu.game_options, menu);
+        if(!getPackageName().equals("aenu.ax360e"))
+            menu.removeItem(R.id.create_shortcut);
     }
 
     @Override
@@ -299,12 +318,34 @@ AppOpenAdManager.getInstance(this).showAdIfAvailable( this);}
             {
                 intent.setAction(Intent.ACTION_VIEW);
                 intent.putExtra(EmulatorActivity.EXTRA_GAME_URI, meta_info.uri);
+                File custom_config_file=Application.get_custom_config(meta_info.title_id);
+                if(custom_config_file.exists()){
+                    intent.putExtra(EmulatorActivity.EXTRA_CONFIG_PATH, custom_config_file.getAbsolutePath());
+                }
             }
             shortcutManager.requestPinShortcut(new ShortcutInfo.Builder(this, meta_info.name)
                     .setShortLabel(meta_info.name)
                     .setIcon(Icon.createWithBitmap( icon))
                     .setIntent(intent)
                     .build(), null);
+        }
+        else if(item_id==R.id.game_patches){
+            Emulator.GameInfo meta_info=adapter.getMetaInfo(position);
+            show_game_patch_dialog(meta_info);
+        }
+        else if(item_id==R.id.game_info){
+            Emulator.GameInfo meta_info=adapter.getMetaInfo(position);
+            show_game_info_dialog(meta_info);
+        }
+        else if(item_id==R.id.edit_custom_config){
+            Intent intent=new Intent(this,EmulatorSettings.class);
+            File cfg_file=Application.get_custom_config(adapter.getMetaInfo(position).title_id);
+            if(!cfg_file.exists()){
+                cfg_file.getParentFile().mkdirs();
+                Utils.copy_file(Application.get_global_config_file(),cfg_file);
+            }
+            intent.putExtra(EmulatorSettings.EXTRA_CONFIG_PATH, cfg_file.getAbsolutePath());
+            startActivity(intent);
         }
 
         return super.onContextItemSelected(item);
@@ -339,7 +380,7 @@ AppOpenAdManager.getInstance(this).showAdIfAvailable( this);}
 
         int item_id=item.getItemId();
         if(item_id==R.id.menu_refresh_list){
-            refresh_game_list();
+            refresh_and_show_game_list();
             return true;
         }
         else if(item_id==R.id.menu_key_mappers){
@@ -378,7 +419,7 @@ AppOpenAdManager.getInstance(this).showAdIfAvailable( this);}
 
         if(requestCode == REQUEST_SELECT_GAME_DIR){
             save_pref_game_dir(this,uri);
-            refresh_game_list();
+            refresh_and_show_game_list();
             return;
         }
     }
@@ -388,7 +429,7 @@ AppOpenAdManager.getInstance(this).showAdIfAvailable( this);}
         activity.startActivityForResult(intent, REQUEST_SELECT_GAME_DIR);
     }
     GameMetaInfoAdapter adapter=null;
-    private void refresh_game_list(){
+    private void refresh_and_show_game_list(){
 
         (progress_task=new ProgressTask( this)
                 .set_progress_message(getString( R.string.game_list_loading))
@@ -402,27 +443,79 @@ AppOpenAdManager.getInstance(this).showAdIfAvailable( this);}
                 .call( new ProgressTask.Task() {
                     @Override
                     public void run(ProgressTask task) {
-                        adapter=null;
                         ArrayList<Emulator.GameInfo> metas=GameMetaInfoAdapter.refresh_game_list( MainActivity.this);
-                        adapter=new GameMetaInfoAdapter(MainActivity.this,metas);
 
-                        /*File json_file=get_game_list_file();
+                        File json_file=get_game_list_file();
                         if(json_file.exists())
                             json_file.delete();
                         GameMetaInfoAdapter.save_game_list_to_json_file(json_file,GameMetaInfoAdapter.refresh_game_list(MainActivity.this));
-                        */task.task_handler.sendEmptyMessage(ProgressTask.TASK_DONE);
+                        task.task_handler.sendEmptyMessage(ProgressTask.TASK_DONE);
                     }
                 });
         //show_game_list();
     }
 
     private void show_game_list(){
-        if(adapter==null){
-            refresh_game_list();
+
+        try{
+            ArrayList<Emulator.GameInfo> metas=GameMetaInfoAdapter.load_game_list_from_json_file(get_game_list_file());
+            adapter=new GameMetaInfoAdapter(this,metas);
+            ((ListView)findViewById(R.id.game_list)).setAdapter(adapter);
+        }
+        catch(Exception e){
+            refresh_and_show_game_list();
+        }
+    }
+
+    void show_game_info_dialog(Emulator.GameInfo meta_info)
+    {
+        AlertDialog.Builder builder=new AlertDialog.Builder(this);
+        builder.setTitle("["+meta_info.title_id+"]"+meta_info.name);
+        builder.setMessage(meta_info.uri.toString());
+        builder.setPositiveButton(android.R.string.ok,null);
+        builder.show();
+    }
+
+    void show_game_patch_dialog(Emulator.GameInfo meta_info){
+
+        Emulator.PatchManager.PatchContext patchContext = Emulator.PatchManager.getPatchContextForGame(meta_info.title_id);
+        if(patchContext == null){
+            Toast.makeText(this, R.string.patches_no_match, Toast.LENGTH_SHORT).show();
             return;
         }
-        ((ListView)findViewById(R.id.game_list)).setAdapter(adapter);
+
+        String[] patchNames = new String[patchContext.patches.size()];
+        boolean[] checkedStates = new boolean[patchNames.length];
+
+        for (int i = 0; i < patchNames.length; i++) {
+            Emulator.PatchManager.PatchInfo patch = patchContext.patches.get(i);
+            patchNames[i] = patch.name;
+            checkedStates[i] = patch.isEnabled;
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(meta_info.name)
+                .setMultiChoiceItems(patchNames, checkedStates, new DialogInterface.OnMultiChoiceClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which, boolean isChecked) {
+                        checkedStates[which] = isChecked;
+                    }
+                })
+                .setPositiveButton(getString(R.string.apply), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+
+                        for (int i = 0; i < checkedStates.length; i++) {
+                            Emulator.PatchManager.updatePatchStatus(patchContext, patchContext.patches.get(i), checkedStates[i]);
+                        }
+                        Emulator.PatchManager.savePatchFile(patchContext);
+                        Toast.makeText(MainActivity.this, getString(R.string.patch_settings_saved), Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .create().show();
     }
+
     static void save_pref_game_dir(Context ctx,Uri uri){
         try{
             ctx.getContentResolver().takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION);
@@ -509,7 +602,7 @@ AppOpenAdManager.getInstance(this).showAdIfAvailable( this);}
             fis.close();
             return baos.toString();
         }
-        /*static ArrayList<Emulator.GameInfo> load_game_list_from_json_file(File json) throws JSONException, IOException {
+        static ArrayList<Emulator.GameInfo> load_game_list_from_json_file(File json) throws JSONException, IOException {
             String json_str=load_file_as_string(json);
             return load_game_list_from_json(json_str);
         }
@@ -541,7 +634,7 @@ AppOpenAdManager.getInstance(this).showAdIfAvailable( this);}
                 game_list.put(Emulator.GameInfo.to_json(meta));
             }
             return game_list.toString();
-        }*/
+        }
 
 
 
@@ -556,25 +649,41 @@ AppOpenAdManager.getInstance(this).showAdIfAvailable( this);}
             DocumentFile[] files=iso_dir.listFiles();
             for(DocumentFile file:files){
                 if(file.isDirectory()){
+                    /*
                     DocumentFile default_xex_file=Filter.get_default_xex_file(file);
                     if(default_xex_file==null) continue;
-                    Emulator.GameInfo meta=new Emulator.GameInfo();
-                    meta.uri=default_xex_file.getUri().toString();
-                    meta.name=file.getName();
-                    metas.add(meta);
+                    Emulator.GameInfo meta=Emulator.get.meta_info_from_xex_game(context,default_xex_file.getUri(),iso_dir);
+                    if(meta!=null){
+                        if(meta.name== null){
+                            meta.name=file.getName();
+                        }
+                        metas.add(meta);
+                    }*/
+
+                    DocumentFile default_xex_file=Filter.get_default_xex_file(file);
+                    if(default_xex_file==null) continue;
+
+                    try{
+                        Emulator.GameInfo meta=new Emulator.GameInfo();
+                        meta.uri=default_xex_file.getUri().toString();
+                        meta.name=file.getName();
+                        ParcelFileDescriptor pfd = context.getContentResolver().openFileDescriptor(default_xex_file.getUri(), "r");
+                        meta.title_id=Emulator.get.title_id_from_xex(pfd.getFd());
+                        pfd.close();
+                        metas.add(meta);
+                    }
+                    catch (Exception e){
+                        e.printStackTrace();
+                    }
                 }
                 else{
                     if(Filter.is_iso_file(file.getName())){
-                        Emulator.GameInfo meta=new Emulator.GameInfo();
-                        meta.name=file.getName().substring(0,file.getName().length()-4);
-                        meta.uri=file.getUri().toString();
-                        metas.add(meta);
+                        Emulator.GameInfo meta=Emulator.get.meta_info_from_iso_game(context,file);
+                        if(meta!=null) metas.add(meta);
                     }
                     if(Filter.is_zar_file(file.getName())){
-                        Emulator.GameInfo meta=new Emulator.GameInfo();
-                        meta.name=file.getName().substring(0,file.getName().length()-4);
-                        meta.uri=file.getUri().toString();
-                        metas.add(meta);
+                        Emulator.GameInfo meta=Emulator.get.meta_info_from_zar_game(context,file);
+                        if(meta!=null) metas.add(meta);
                     }
                     else if(Filter.is_god_game(file.getName())){
                         Emulator.GameInfo meta=Emulator.get.meta_info_from_god_game(context,file.getUri().toString());

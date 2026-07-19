@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="edit_custom_config">Özel Yapılandırmayı Düzenle</string>
+    <string name="game_patches">Oyun Yamaları</string>
+    <string name="patches_no_match">Bu oyun için yama bulunamadı</string>
+    <string name="apply">Uygula</string>
+    <string name="game_info">Oyun Bilgisi</string>
+    <string name="patch_settings_saved">Yama ayarları kaydedildi</string>
+
     <string name="es_apu_xma_decoder">Xma Kod Çözücü</string>
     <string name="es_cpu_disable_context_promotion">Bağlam Tanıtmayı Devre Dışı Bırak</string>
     <string name="es_cpu_disable_instruction_infocache">Talimat Bilgi Önbelleğini Devre Dışı Bırak</string>

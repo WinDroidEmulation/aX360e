@@ -252,6 +252,17 @@ class Emulator {
         X_STATUS LaunchDiscImage(std::unique_ptr<DocumentFile> path);
         X_STATUS LaunchDiscArchive(std::unique_ptr<DocumentFile> path);
         X_STATUS LaunchStfsContainer(std::unique_ptr<DocumentFile> path,std::unique_ptr<DocumentFile> data_dir);
+
+        struct GameMetadata {
+            uint32_t title_id = 0;
+            std::string title_name;
+            std::vector<uint8_t> icon;
+        };
+
+        bool GetGameMetadata(std::unique_ptr<DocumentFile> path,
+                             const std::string& file_name,
+                             FileSignatureType type,
+                             GameMetadata& out_meta);
 #endif
   enum class InstallState : uint8_t {
     preparing,

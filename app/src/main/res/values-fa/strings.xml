@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="edit_custom_config">ویرایش پیکربندی سفارشی</string>
+    <string name="game_patches">پچ‌های بازی</string>
+    <string name="patches_no_match">هیچ پچی برای این بازی یافت نشد</string>
+    <string name="apply">اعمال</string>
+    <string name="game_info">اطلاعات بازی</string>
+    <string name="patch_settings_saved">تنظیمات پچ ذخیره شد</string>
+
     <string name="es_apu_xma_decoder">رمزگشای Xma</string>
     <string name="es_cpu_disable_context_promotion">غیرفعال کردن ارتقای زمینه</string>
     <string name="es_cpu_disable_instruction_infocache">غیرفعال کردن حافظه نهانی اطلاعات دستورالعمل</string>
