@@ -21,22 +21,22 @@ android {
                 cppFlags ''
             }
         }
-        sourceSets{
+
+        sourceSets {
             main {
-                //jniLibs.srcDirs = ['src/main/libs']
+                // jniLibs.srcDirs = ['src/main/libs']
             }
         }
     }
-    signingConfigs {
 
-    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.release
+            signingConfig signingConfigs.debug
         }
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
@@ -44,30 +44,28 @@ android {
 
     externalNativeBuild {
         cmake {
-            //abiFilters 'arm64-v8a'
-            //cppFlags ''
             path file('src/main/cpp/CMakeLists.txt')
             version '3.22.1'
         }
     }
 
-    packaging{
+    packaging {
         jniLibs.useLegacyPackaging = true
     }
 }
 
 dependencies {
-implementation("com.google.android.gms:play-services-ads-api:24.6.0")
-implementation("com.google.android.gms:play-services-ads:24.6.0")
-implementation("com.google.android.ump:user-messaging-platform:2.1.0")
+    implementation("com.google.android.gms:play-services-ads-api:24.6.0")
+    implementation("com.google.android.gms:play-services-ads:24.6.0")
+    implementation("com.google.android.ump:user-messaging-platform:2.1.0")
 
     implementation libs.appcompat
     implementation libs.material
     implementation libs.activity
     implementation libs.constraintlayout
     implementation libs.preference
+
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
-
 }
